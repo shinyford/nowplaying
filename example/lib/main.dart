@@ -26,17 +26,16 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: NowPlaying.instance,
+    return StreamProvider.value(
+      value: NowPlaying.instance.stream,
       child: MaterialApp(
         home: Scaffold(
           appBar: AppBar(
             title: const Text('NowPlaying example app'),
           ),
           body: Center(
-            child: Consumer<NowPlaying>(
-              builder: (context, nowPlaying, _) {
-                final track = nowPlaying.track;
+            child: Consumer<NowPlayingTrack>(
+              builder: (context, track, _) {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -75,7 +74,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget _imageFrom(NowPlayingTrack track) {
-    if (track.hasImage) return Image(image: track.image, width: 200, height: 200, fit: BoxFit.contain);
+    if (track.hasImage) return Image(key: Key(track.id), image: track.image, width: 200, height: 200, fit: BoxFit.contain);
 
     if (track.isResolvingImage) return Container(
       width: 50.0,

@@ -13,6 +13,9 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
   static const _channel = const MethodChannel('gomes.com.es/nowplaying');
   static const _refreshPeriod = const Duration(seconds: 1);
 
+  StreamController<NowPlayingTrack> _controller;
+  Stream<NowPlayingTrack> get stream => _controller.stream;
+
   static NowPlaying instance = NowPlaying._();
   NowPlaying._();
 
@@ -26,6 +29,9 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
     this._resolveImages = resolveImages;
     this.resolver = resolver ?? _NowPlayingImageResolver();
 
+    _controller = StreamController<NowPlayingTrack>.broadcast();
+    _controller.add(NowPlayingTrack.notPlaying);
+
     await _bindToWidgetsBinding();
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
     if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
@@ -34,6 +40,9 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void stop() {
+    _controller?.close();
+    _controller = null;
+
     WidgetsBinding.instance.removeObserver(this);
     if (Platform.isAndroid) _channel.setMethodCallHandler(null);
     if (Platform.isIOS) {
@@ -45,13 +54,13 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
   void _updateAndNotifyFor(NowPlayingTrack track) {
     this.track = track;
     if (_resolveImages) _resolveImageFor(track);
-    notifyListeners();
+    _controller.add(track);
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
     if (!track.hasOrIsResolvingImage) {
       await track._resolveImage();
-      notifyListeners();
+      _controller.add(track.copy());
     }
   }
 
@@ -132,6 +141,8 @@ class NowPlayingTrack {
   static NowPlayingTrack notPlaying = NowPlayingTrack();
 
   static final _images = _LruMap<String, ImageProvider>(size: 3);
+  static final _resolutionStates =
+      _LruMap<String, _NowPlayingImageResolutionState>(size: 3);
   static final _icons =  _LruMap<String, ImageProvider>();
 
   final String id;
@@ -141,9 +152,6 @@ class NowPlayingTrack {
   final String source;
   final Duration duration;
   final NowPlayingState state;
-
-  _NowPlayingImageResolutionState _resolutionState =
-      _NowPlayingImageResolutionState.unresolved;
 
   ImageProvider get icon {
     if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
@@ -160,6 +168,10 @@ class NowPlayingTrack {
 
   ImageProvider get image => _images[this.id];
   set image(ImageProvider image) => _images[this.id] = image;
+
+  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[this.id];
+  set _resolutionState(_NowPlayingImageResolutionState state) =>
+      _resolutionStates[this.id] = state;
 
   NowPlayingTrack({
     this.id,
@@ -191,6 +203,8 @@ class NowPlayingTrack {
     final Uint8List iconData = json['sourceIcon'];
     if (iconData is Uint8List) _icons[json['source']] ??= MemoryImage(iconData);
 
+    _resolutionStates[id] ??= _NowPlayingImageResolutionState.unresolved;
+
     return NowPlayingTrack(
       id: id,
       title: json['title'],
@@ -201,6 +215,17 @@ class NowPlayingTrack {
       source: json['source']
     );
   }
+
+  NowPlayingTrack copy() =>
+    NowPlayingTrack(
+      id: this.id,
+      title: this.title,
+      album: this.album,
+      artist: this.artist,
+      duration: this.duration,
+      state: this.state,
+      source: this.source,
+    );
 
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
@@ -238,13 +263,10 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     if (track.hasImage) return null;
     if (track.artist == null || track.album == null) return null;
 
-    final albumMBID = await _getAlbumMBID(track);
-    if (albumMBID == null) return null;
-
-    return _getAlbumArt(albumMBID);
+    return _getAlbumCover(track);
   }
 
-  Future<String> _getAlbumMBID(NowPlayingTrack track) async {
+  Future<ImageProvider> _getAlbumCover(NowPlayingTrack track) async {
     final String albumTitle = _rationalise(track.album);
     final String artistName = _rationalise(track.artist);
 
@@ -254,10 +276,15 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     for (Map<String, dynamic> release in json['releases']) {
       for (Map<String, dynamic> artist in release['artist-credit']) {
         if (artist['joinphrase'] != null) continue;
-        if (_rationalise(artist['name']) == artistName) return release['id'];
+        if (_rationalise(artist['name']) == artistName) {
+          print(release['id']);
+          final albumArt = await _getAlbumArt(release['id']);
+          if (albumArt != null) return albumArt;
+        }
       }
     }
 
+    print('NO ARTWORK FOUND');
     return null;
   }
 
