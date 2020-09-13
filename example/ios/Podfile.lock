@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - nowplaying (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - nowplaying (from `.symlinks/plugins/nowplaying/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  nowplaying:
+    :path: ".symlinks/plugins/nowplaying/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  nowplaying: 6706f617cc8816e940c416954ea18b04743afb28
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.9.3
