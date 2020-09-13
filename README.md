@@ -74,7 +74,7 @@ The Android settings page for this permission is a little hard to find, so NowPl
 NowPlaying.instance.requestPermissions();
 ```
 
-This method should only be called once - to avoid annoying a user by showing the permissions page on every app restart, for example - and so will only open the settings page once for any given install of the app. It returns a boolean: `true` if the page has been successfully shown; `false` if this is a second or later call to the method, meaning navigation to the settings page is prohibited. (Note: this method always returns `true` on iOS).
+To avoid annoying a user by showing the permissions page on every app restart, for example, this settings page should only be shown once: as such,the unparameterised `requestPermissions` function will only open the settings page once for any given install of the app. It returns a boolean: `true` the first time, when the page has been successfully shown; `false` if this is a second or later call to the method, with navigation to the settings page prohibited. (Note that `requestPermissions()` always returns `true` on iOS).
 
 ```dart
 final bool hasShownPermissions = await NowPlaying.instance.requestPermissions();
