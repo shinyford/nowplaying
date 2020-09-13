@@ -80,7 +80,7 @@ This method should only be called once - to avoid annoying a user by showing the
 final bool hasShownPermissions = await NowPlaying.instance.requestPermissions();
 ```
 
-If you really need to show the permissions page a second time, probably after gently explainging to the user why, you can `force` it open:
+If you really need to show the permissions page a second time, probably after gently explaining to the user why, you can `force` it open:
 
 ```dart
 if (!hasShownPermissions) {
@@ -138,11 +138,11 @@ enum NowPlayingState {
 
 The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music`.
 
-The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget, for consistency.
+The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget.
 
 ##### Album art and associated images
 
-Usually - and almost always, on Android - a track will contain an appropriate `ImageProvider` in its `image` field, usually containing album art, as part of its now-playing information.
+Usually - and almost always, on Android - a track will contain an appropriate `ImageProvider` in its `image` field, containing album art or similar.
 
 On iOS, however, there is a bug or badly documented policy that means album art is only made available if the track being played is in your local library: any tracks streamed from e.g. Apple music playlists are image-free.
 
