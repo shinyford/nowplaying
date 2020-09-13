@@ -18,7 +18,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     NowPlaying.instance.isEnabled().then((bool isEnabled) async {
       if (!isEnabled) {
-        print('ENABLED: $isEnabled');
         final shown = await NowPlaying.instance.requestPermissions(force: true);
         print('MANAGED TO SHOW PERMS PAGE: $shown');
       }
@@ -38,7 +37,6 @@ class _MyAppState extends State<MyApp> {
             child: Consumer<NowPlaying>(
               builder: (context, nowPlaying, _) {
                 final track = nowPlaying.track;
-                Future(() async => print('ENABLED: ${await nowPlaying.isEnabled()}'));
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
