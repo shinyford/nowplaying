@@ -21,13 +21,13 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
 
   Timer _refreshTimer;
 
-  NowPlayingImageResolver resolver;
+  NowPlayingImageResolver _resolver;
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
 
-  void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async { // async, but should not be awaited
-    this._resolveImages = resolveImages;
-    this.resolver = resolver ?? _NowPlayingImageResolver();
+  void start({bool resolveImages, NowPlayingImageResolver resolver}) async { // async, but should not be awaited
+    this._resolveImages = resolveImages ?? resolver != null;
+    this._resolver = resolver ?? _NowPlayingImageResolver();
 
     _controller = StreamController<NowPlayingTrack>.broadcast();
     _controller.add(NowPlayingTrack.notPlaying);
@@ -166,12 +166,14 @@ class NowPlayingTrack {
       _resolutionState == _NowPlayingImageResolutionState.unresolved;
   bool get hasOrIsResolvingImage => hasImage || isResolvingImage;
 
-  ImageProvider get image => _images[this.id];
-  set image(ImageProvider image) => _images[this.id] = image;
+  String get _imageId => '$artist:$album';
 
-  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[this.id];
+  ImageProvider get image => _images[_imageId];
+  set image(ImageProvider image) => _images[_imageId] = image;
+
+  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[_imageId];
   set _resolutionState(_NowPlayingImageResolutionState state) =>
-      _resolutionStates[this.id] = state;
+      _resolutionStates[_imageId] = state;
 
   NowPlayingTrack({
     this.id,
@@ -189,22 +191,22 @@ class NowPlayingTrack {
     final state = NowPlayingState.values[json['state']];
     if (state == NowPlayingState.stopped) return notPlaying;
 
-    final String id = json['id'].toString();
-    if (!_images.containsKey(id)) {
+    final String imageId = '${json['artist']}:${json['album']}';
+    if (!_images.containsKey(imageId)) {
       final Uint8List imageData = json['image'];
       if (imageData is Uint8List) {
-        _images[id] = MemoryImage(imageData);
+        _images[imageId] = MemoryImage(imageData);
       } else {
         final String imageUri = json['imageUri'];
-        if (imageUri is String) _images[id] = NetworkImage(imageUri);
+        if (imageUri is String) _images[imageId] = NetworkImage(imageUri);
       }
+      _resolutionStates[imageId] = _NowPlayingImageResolutionState.unresolved;
     }
 
     final Uint8List iconData = json['sourceIcon'];
     if (iconData is Uint8List) _icons[json['source']] ??= MemoryImage(iconData);
 
-    _resolutionStates[id] ??= _NowPlayingImageResolutionState.unresolved;
-
+    final String id = json['id'].toString();
     return NowPlayingTrack(
       id: id,
       title: json['title'],
@@ -244,7 +246,7 @@ class NowPlayingTrack {
   Future<void> _resolveImage() async {
     if (this.needsResolving) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      this.image = await NowPlaying.instance.resolver.resolve(this);
+      this.image = await NowPlaying.instance._resolver.resolve(this);
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
   }
@@ -277,14 +279,12 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
       for (Map<String, dynamic> artist in release['artist-credit']) {
         if (artist['joinphrase'] != null) continue;
         if (_rationalise(artist['name']) == artistName) {
-          print(release['id']);
           final albumArt = await _getAlbumArt(release['id']);
           if (albumArt != null) return albumArt;
         }
       }
     }
 
-    print('NO ARTWORK FOUND');
     return null;
   }
 
@@ -309,21 +309,19 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<Map<String, dynamic>> _getJson(String url) async {
-    final completer = Completer<Map<String, dynamic>>();
-
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.0.1 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.0 ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 
+    final completer = Completer<Map<String, dynamic>>();
     final body = StringBuffer();
     resp.transform(utf8.decoder).listen(body.write, onDone: () {
       final json = jsonDecode(body.toString());
       completer.complete(json);
     });
-
     return completer.future;
   }
 

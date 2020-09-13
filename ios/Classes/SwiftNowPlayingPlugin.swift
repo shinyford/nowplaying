@@ -29,7 +29,7 @@ public class SwiftNowPlayingPlugin: NSObject, FlutterPlugin {
               trackData["genre"] = nowPlayingItem.genre
               trackData["duration"] = Int(nowPlayingItem.playbackDuration * 1000)
               trackData["image"] = nowPlayingItem.artwork?.image(at: imageSize)?.pngData()
-              trackData["source"] = "music.apple.com"
+              trackData["source"] = "com.apple.music"
             }
 
             switch musicPlayer.playbackState {

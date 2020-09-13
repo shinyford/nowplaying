@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     NowPlaying.instance.isEnabled().then((bool isEnabled) async {
       if (!isEnabled) {
-        final shown = await NowPlaying.instance.requestPermissions(force: true);
+        final shown = await NowPlaying.instance.requestPermissions();
         print('MANAGED TO SHOW PERMS PAGE: $shown');
       }
     });
@@ -44,14 +44,13 @@ class _MyAppState extends State<MyApp> {
                       if (track.title != null) Text(track.title),
                       if (track.artist != null) Text(track.artist),
                       if (track.album != null) Text(track.album),
-                      if (track.duration != null)Text(track.duration.toString().split('.').first.padLeft(8, '0')),
+                      if (track.duration != null) Text(track.duration.toString().split('.').first.padLeft(8, '0')),
                       Text(track.state.toString()),
                       Stack(
                         alignment: Alignment.center,
                         // fit: StackFit.loose,
                         children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
+                          Container(
                             margin: const EdgeInsets.all(8.0),
                             width: 200,
                             height: 200,

@@ -1,7 +1,7 @@
 name: nowplaying
 description: A plugin to reveal metadata for the currently playing audio track
-version: 0.0.1
-author: Nic Ford (nicsford+NowPlayingFlutter@gmail.com)
+repository: https://github.com/shinyford/nowplaying
+version: 0.1.0
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
