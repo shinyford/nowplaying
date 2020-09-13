@@ -1,29 +1,178 @@
 # NowPlaying
 
-A new flutter plugin project.
+A Flutter plugin for iOS and Android which surfaces metadata around the currently playing
+audio track on the device.
 
-## Getting Started
+On Android `nowplaying` makes use of the `NotifiationListenerService`, and shows any
+track revealing its play state via a notification.
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+On iOS `nowplaying` is restricted to access to music or media played via the Apple Music/iTunes app.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Installation
 
+Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
+```
+dependencies:
+    nowplaying: ^0.1.0
+```
 
-	<key>NSAppleMusicUsageDescription</key>
-	<string>We need this to show you what's currently playing</string>
+#### iOS
 
+Add the following usage to your `ios/Runner/Info.plist`:
 
+```
+<key>NSAppleMusicUsageDescription</key>
+<string>We need this to show you what's currently playing</string>
+```
 
-        <service android:name="com.gomes.nowplaying.NowPlayingListenerService"
-            android:label="NowPlayingListenerService"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
+#### Android
+
+To enable the notification listener service, add the following block to your `android/app/src/main/AndroidManifest.xml`, just before the closing `</application>` tag:
+
+```
+<service android:name="com.gomes.nowplaying.NowPlayingListenerService"
+    android:label="NowPlayingListenerService"
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+    <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+    </intent-filter>
+</service>
+```
+
+## Usage
+
+#### Initialisation
+
+Initialise the `nowplaying` service by starting it's instance:
+
+```dart
+NowPlaying.instance.start();
+```
+
+This can be done anywhere, including prior to the `runApp` command.
+
+##### Permissions
+
+iOS automatically has the required permissions to access now-playing data, via the usage key added during the installation phase.
+
+Android users must give explicit permission for the service to access the notification stream from which now-playing data is extracted.
+
+Test for whether permissions have been given or not via the instance's `isEnabled` method:
+
+```dart
+final bool isEnabled = await NowPlaying.instance.isEnabled();
+// isEnabled() always returns true on iOS
+if (!isEnabled) {
+    ...
+}
+```
+
+The Android settings page for this permission is a little hard to find, so NowPlaying includes a convenience method to open it:
+
+```dart
+NowPlaying.instance.requestPermissions();
+```
+
+This method should only be called once - to avoid annoying a user by showing the permissions page on every app restart, for example - and so will only open the settings page once for any given install of the app. It returns a boolean: `true` if the page has been successfully shown; `false` if this is a second or later call to the method, meaning navigation to the settings page is prohibited. (Note: this method always returns `true` on iOS).
+
+```dart
+final bool hasShownPermissions = await NowPlaying.instance.requestPermissions();
+```
+
+If you really need to show the permissions page a second time, probably after gently explainging to the user why, you can `force` it open:
+
+```dart
+if (!hasShownPermissions) {
+    final bool pleasePleasePlease = await Navigator.of(context).pushNamed('ExplainAgainReallyNicelyPage');
+    if (pleasePleasePlease) NowPlaying.instance.requestPermissions(force: true);
+}
+```
+
+#### Accessing current now-playing metadata
+
+Now-playing metadata is exposed via a `stream` of `NowPlayingTrack` objects, exposed as `NowPlaying.instance.stream`. This can be consumed however you'd usually consume a stream, e.g.:
+
+```dart
+StreamProvider.value(
+    value: NowPlaying.instance.stream,
+    child: MaterialApp(
+        home: Scaffold(
+            body: Consumer<NowPlayingTrack>(
+                builder: (context, track, _) {
+                    return Container(
+                        ...
+                    );
+                }
+            )
+        )
+    )
+)
+```
+
+The `NowPlayingTrack` objects contain the following fields:
+
+```dart
+String title;
+String artist;
+String album;
+String genre;
+Duration duration;
+NowPlayingState state;
+ImageProvider image;
+ImageProvider icon;
+String source;
+```
+
+where `NowPlayingState` is defined as:
+
+```dart
+enum NowPlayingState {
+  playing, paused, stopped
+}
+```
+
+...which is hopefully self-explanatory.
+
+##### `icon` and `source` fields
+
+The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music`.
+
+The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget, for consistency.
+
+##### Album art and associated images
+
+Usually - and almost always, on Android - a track will contain an appropriate `ImageProvider` in its `image` field, usually containing album art, as part of its now-playing information.
+
+On iOS, however, there is a bug or badly documented policy that means album art is only made available if the track being played is in your local library: any tracks streamed from e.g. Apple music playlists are image-free.
+
+`NowPlaying` can attempt to resolve missing images for you. However, this is a relatively heavy process in terms of memory and processing, so is turned off by default. To enable missing image resolution, set the `resolveImages` parameter to `true` when starting the instance:
+
+```dart
+NowPlaying.instance.start(resolveImages: true);
+```
+
+The default image resolution process:
+* will only attempt to find an image if none already exists
+* makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](http://coverartarchive.org/)
+
+##### Overriding the image resolver
+
+You may decide that you want to resolve missing images in a different way, or even override images that have already been found from the metadata. In this case, supply a new image resolver when starting the instance:
+
+```dart
+NowPlaying.instance.start(resolver: MyImageResolver());
+
+...
+
+class MyImageResolver implements NowPlayingImageResolver {
+    @override
+    Future<ImageProvider> resolve(NowPlayingTrack track) async {
+        ...
+    }
+}
+```
+
+#### Credits
+
+Thanks to Fábio A. M. Pereira for his [Notification Listener Service Example](https://github.com/Chagall/notification-listener-service-example), which provided inspiration (and in some cases, let's be honest, actual code) for the Android implementation.
