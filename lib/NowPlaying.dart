@@ -67,7 +67,7 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<bool> isEnabled() async =>
-      Platform.isIOS || await _channel.invokeMethod('isEnabled');
+      Platform.isIOS || await _channel.invokeMethod<bool>('isEnabled');
 
   Future<bool> requestPermissions({bool force = false}) async {
     if (Platform.isIOS) return true;
@@ -79,7 +79,7 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
     if (!force && await file.exists()) return false;
 
     file.create();
-    await _channel.invokeMethod('requestPermissions');
+    await _channel.invokeMethod<bool>('requestPermissions');
     return true;
   }
 
