@@ -74,7 +74,7 @@ The Android settings page for this permission is a little hard to find, so NowPl
 NowPlaying.instance.requestPermissions();
 ```
 
-To avoid annoying a user by showing the permissions page on every app restart, for example, this settings page should only be shown once: as such,the unparameterised `requestPermissions` function will only open the settings page once for any given install of the app. It returns a boolean: `true` the first time, when the page has been successfully shown; `false` if this is a second or later call to the method, with navigation to the settings page prohibited. (Note that `requestPermissions()` always returns `true` on iOS).
+To avoid annoying a user by e.g. showing the permissions page on every app restart, navigation to this page should be limited: as such, the unparameterised `requestPermissions` function will only open the settings page once for any given install of the app. It returns a boolean: `true` the first time, when the page has been successfully shown; `false` if this is a second or later call to the method, with navigation to the settings page prohibited. (Note that `requestPermissions()` always returns `true` on iOS).
 
 ```dart
 final bool hasShownPermissions = await NowPlaying.instance.requestPermissions();
@@ -143,9 +143,9 @@ The `icon` image provider, if not null, supplies a small, transparent PNG contai
 
 ##### The `progress` field
 
-As is probably obvious, `progress` is a duration describing how far through the track the player has progressed: how much as played in ms, in other words.
+As is probably obvious, `progress` is a duration describing how far through the track the player has progressed, in milliseconds: how much of a track has been played, in other words.
 
-Note that no new track is emitted on the `NowPlaying.stream` as a track progresses: stream updates only happen when the track changes state (playing to paused; vice versa; new track starts; and so on). However, the `progress` field of a track will give you an instantaneous 'correct' value every time it's polled, so to see progress updating in real time create a stateful widge to expose it:
+Note that no new track is emitted on the stream as a track progresses: stream updates only happen when the track changes state (playing to paused; vice versa; new track starts; and so on). However, the `progress` field of a track will give you an instantaneous 'correct' value every time it's polled, so to see progress updating in real time create a stateful widge to expose it:
 
 ```dart
 class TrackProgressIndicator extends StatefulWidget {
