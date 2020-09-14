@@ -144,7 +144,7 @@ class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
   @override
   Widget build(BuildContext context) {
     final progress = widget.track.progress;
-    final countdown = widget.track.duration - progress;
+    final countdown = widget.track.duration - progress + const Duration(seconds: 1);
     return Column(
       children: [
         Text(progress.toString().split('.').first.padLeft(8, '0')),
