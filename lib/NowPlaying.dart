@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -24,7 +23,9 @@ class NowPlaying with WidgetsBindingObserver {
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
 
-  void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async { // async, but should not be awaited
+  void start(
+      {bool resolveImages = false, NowPlayingImageResolver resolver}) async {
+    // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? _NowPlayingImageResolver();
 
@@ -33,7 +34,8 @@ class NowPlaying with WidgetsBindingObserver {
 
     await _bindToWidgetsBinding();
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
-    if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+    if (Platform.isIOS)
+      _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
     _refresh();
   }
@@ -101,13 +103,19 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   bool _shouldNotifyFor(NowPlayingTrack track) {
-    if (track.id == this.track.id && track.state == this.track.state) return false;
+    if (track.id == this.track.id && track.state == this.track.state)
+      return false;
 
     switch (track.state) {
-      case NowPlayingState.playing: return true;
-      case NowPlayingState.paused: return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
-      case NowPlayingState.stopped: return track.id != this.track.id;
-      default: return false;
+      case NowPlayingState.playing:
+        return true;
+      case NowPlayingState.paused:
+        return this.track.isStopped ||
+            (this.track.isPlaying && track.id == this.track.id);
+      case NowPlayingState.stopped:
+        return track.id != this.track.id;
+      default:
+        return false;
     }
   }
   // /iOS
@@ -117,7 +125,8 @@ class NowPlaying with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       return Future.value(true);
     } else {
-      return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
+      return Future.delayed(
+          const Duration(milliseconds: 250), _bindToWidgetsBinding);
     }
   }
 
@@ -134,9 +143,7 @@ class NowPlaying with WidgetsBindingObserver {
   }
 }
 
-enum _NowPlayingImageResolutionState {
-  unresolved, resolving, resolved
-}
+enum _NowPlayingImageResolutionState { unresolved, resolving, resolved }
 
 class NowPlayingTrack {
   static NowPlayingTrack notPlaying = NowPlayingTrack();
@@ -144,7 +151,7 @@ class NowPlayingTrack {
   static final _images = _LruMap<String, ImageProvider>(size: 3);
   static final _resolutionStates =
       _LruMap<String, _NowPlayingImageResolutionState>(size: 3);
-  static final _icons =  _LruMap<String, ImageProvider>();
+  static final _icons = _LruMap<String, ImageProvider>();
 
   final String id;
   final String title;
@@ -157,12 +164,14 @@ class NowPlayingTrack {
   final NowPlayingState state;
 
   Duration get progress {
-    if (state == NowPlayingState.playing) return _position + DateTime.now().difference(_createdAt);
+    if (state == NowPlayingState.playing)
+      return _position + DateTime.now().difference(_createdAt);
     return _position;
   }
 
   ImageProvider get icon {
-    if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (Platform.isIOS)
+      return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
@@ -179,7 +188,8 @@ class NowPlayingTrack {
   ImageProvider get image => _images[_imageId];
   set image(ImageProvider image) => _images[_imageId] = image;
 
-  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[_imageId];
+  _NowPlayingImageResolutionState get _resolutionState =>
+      _resolutionStates[_imageId];
   set _resolutionState(_NowPlayingImageResolutionState state) =>
       _resolutionStates[_imageId] = state;
 
@@ -193,9 +203,8 @@ class NowPlayingTrack {
     this.source,
     Duration position,
     DateTime createdAt,
-  }) :
-    this._position = position ?? Duration.zero,
-    this._createdAt = createdAt ?? DateTime.now();
+  })  : this._position = position ?? Duration.zero,
+        this._createdAt = createdAt ?? DateTime.now();
 
   factory NowPlayingTrack.fromJson(Map<String, dynamic> json) {
     if (json == null || json.isEmpty) return notPlaying;
@@ -220,19 +229,17 @@ class NowPlayingTrack {
 
     final String id = json['id'].toString();
     return NowPlayingTrack(
-      id: id,
-      title: json['title'],
-      album: json['album'],
-      artist: json['artist'],
-      duration: Duration(milliseconds: json['duration'] ?? 0),
-      position: Duration(milliseconds: json['position'] ?? 0),
-      state: state,
-      source: json['source']
-    );
+        id: id,
+        title: json['title'],
+        album: json['album'],
+        artist: json['artist'],
+        duration: Duration(milliseconds: json['duration'] ?? 0),
+        position: Duration(milliseconds: json['position'] ?? 0),
+        state: state,
+        source: json['source']);
   }
 
-  NowPlayingTrack copy() =>
-    NowPlayingTrack(
+  NowPlayingTrack copy() => NowPlayingTrack(
       id: this.id,
       title: this.title,
       album: this.album,
@@ -241,22 +248,20 @@ class NowPlayingTrack {
       position: this._position,
       state: this.state,
       source: this.source,
-      createdAt: this._createdAt
-    );
+      createdAt: this._createdAt);
 
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
   bool get isStopped => this.state == NowPlayingState.stopped;
 
-  String toString() =>
-    isStopped
+  String toString() => isStopped
       ? 'NowPlaying: -silence-'
       : 'NowPlaying:'
-        '\n title: $title'
-        '\n artist: $artist'
-        '\n album: $album'
-        '\n duration: ${duration.inMilliseconds}ms'
-        '\n stat: $state';
+          '\n title: $title'
+          '\n artist: $artist'
+          '\n album: $album'
+          '\n duration: ${duration.inMilliseconds}ms'
+          '\n stat: $state';
 
   Future<void> _resolveImage() async {
     if (this.needsResolving) {
@@ -267,9 +272,7 @@ class NowPlayingTrack {
   }
 }
 
-enum NowPlayingState {
-  playing, paused, stopped
-}
+enum NowPlayingState { playing, paused, stopped }
 
 abstract class NowPlayingImageResolver {
   Future<ImageProvider> resolve(NowPlayingTrack track);
@@ -287,7 +290,8 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     final String albumTitle = _rationalise(track.album);
     final String artistName = _rationalise(track.artist);
 
-    final json = await _getJson('https://musicbrainz.org/ws/2/release?type=album&limit=100&query=$albumTitle');
+    final json = await _getJson(
+        'https://musicbrainz.org/ws/2/release?type=album&limit=100&query=$albumTitle');
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
@@ -327,7 +331,8 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.1 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent',
+        'NowPlaying Flutter Package/0.1.1 ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 

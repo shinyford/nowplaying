@@ -17,7 +17,7 @@ dependencies:
     nowplaying: ^0.1.1
 ```
 
-#### iOS
+### iOS
 
 Add the following usage to your `ios/Runner/Info.plist`:
 
@@ -26,7 +26,7 @@ Add the following usage to your `ios/Runner/Info.plist`:
 <string>We need this to show you what's currently playing</string>
 ```
 
-#### Android
+### Android
 
 To enable the notification listener service, add the following block to your `android/app/src/main/AndroidManifest.xml`, just before the closing `</application>` tag:
 
@@ -42,7 +42,7 @@ To enable the notification listener service, add the following block to your `an
 
 ## Usage
 
-#### Initialisation
+### Initialisation
 
 Initialise the `nowplaying` service by starting it's instance:
 
@@ -52,7 +52,7 @@ NowPlaying.instance.start();
 
 This can be done anywhere, including prior to the `runApp` command.
 
-##### Permissions
+#### Permissions
 
 iOS automatically has the required permissions to access now-playing data, via the usage key added during the installation phase.
 
@@ -90,7 +90,7 @@ if (!hasShownPermissions) {
 ```
 (although this still won't show the settings page if permission is already enabled.)
 
-#### Accessing current now-playing metadata
+### Accessing current now-playing metadata
 
 Now-playing metadata is exposed via a `stream` of `NowPlayingTrack` objects, exposed as `NowPlaying.instance.stream`. This can be consumed however you'd usually consume a stream, e.g.:
 
@@ -136,13 +136,13 @@ enum NowPlayingState {
 
 ...which is hopefully self-explanatory.
 
-##### `icon` and `source` fields
+#### `icon` and `source` fields
 
 The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music`.
 
 The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget.
 
-##### The `progress` field
+#### The `progress` field
 
 As is probably obvious, `progress` is a duration describing how far through the track the player has progressed, in milliseconds: how much of a track has been played, in other words.
 
@@ -180,7 +180,7 @@ class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
 }
 ```
 
-##### Album art and associated images
+#### Album art and associated images
 
 Usually - and almost always, on Android - a track will contain an appropriate `ImageProvider` in its `image` field, containing album art or similar.
 
@@ -196,7 +196,7 @@ The default image resolution process:
 * will only attempt to find an image if none already exists
 * makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](https://coverartarchive.org/)
 
-##### Overriding the image resolver
+#### Overriding the image resolver
 
 You may decide that you want to resolve missing images in a different way, or even override images that have already been found from the metadata. In this case, supply a new image resolver when starting the instance:
 
@@ -213,6 +213,6 @@ class MyImageResolver implements NowPlayingImageResolver {
 }
 ```
 
-#### Credits
+### Credits
 
 Thanks to Fábio A. M. Pereira for his [Notification Listener Service Example](https://github.com/Chagall/notification-listener-service-example), which provided inspiration (and in some cases, let's be honest, actual code) for the Android implementation.
