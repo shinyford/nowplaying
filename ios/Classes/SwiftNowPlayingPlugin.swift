@@ -32,6 +32,8 @@ public class SwiftNowPlayingPlugin: NSObject, FlutterPlugin {
               trackData["source"] = "com.apple.music"
             }
 
+            trackData["position"] = Int(musicPlayer.currentPlaybackTime * 1000)
+
             switch musicPlayer.playbackState {
               case MPMusicPlaybackState.playing, MPMusicPlaybackState.seekingForward, MPMusicPlaybackState.seekingBackward:
                 trackData["state"] = 0

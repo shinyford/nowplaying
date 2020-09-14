@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nowplaying/nowplaying.dart';
 import 'package:provider/provider.dart';
@@ -39,12 +41,13 @@ class _MyAppState extends State<MyApp> {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (track == null || track.isStopped) Text('nothing playing'),
-                    if (track?.isStopped == false) ...[
+                    if (track.isStopped) Text('nothing playing'),
+                    if (!track.isStopped) ...[
                       if (track.title != null) Text(track.title),
                       if (track.artist != null) Text(track.artist),
                       if (track.album != null) Text(track.album),
                       if (track.duration != null) Text(track.duration.toString().split('.').first.padLeft(8, '0')),
+                      TrackProgressIndicator(track),
                       Text(track.state.toString()),
                       Stack(
                         alignment: Alignment.center,
@@ -111,5 +114,35 @@ class _MyAppState extends State<MyApp> {
       case "com.spotify.music": return Colors.green;
       default: return Colors.purpleAccent;
     }
+  }
+}
+
+class TrackProgressIndicator extends StatefulWidget {
+  final NowPlayingTrack track;
+
+  TrackProgressIndicator(this.track);
+
+  @override
+  _TrackProgressIndicatorState createState() => _TrackProgressIndicatorState();
+}
+
+class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
+  Timer _timer;
+
+  @override
+  void initState() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(widget.track.progress.toString().split('.').first.padLeft(8, '0'));
   }
 }

@@ -198,6 +198,7 @@ public class NowPlayingPlugin implements FlutterPlugin, MethodCallHandler, Activ
     data.put("artist", mediaMetadata.getString(MediaMetadata.METADATA_KEY_ARTIST));
     data.put("genre", mediaMetadata.getString(MediaMetadata.METADATA_KEY_GENRE));
     data.put("duration", mediaMetadata.getLong(MediaMetadata.METADATA_KEY_DURATION));
+    data.put("position", playbackState.getPosition());
 
     if (state != STATE_STOPPED && !id.equals(lastId)) {
       // do the onerous imagey stuff only if we're on a new paused or playing media item

@@ -118,6 +118,7 @@ String artist;
 String album;
 String genre;
 Duration duration;
+Duration progress; // check note below
 NowPlayingState state;
 ImageProvider image;
 ImageProvider icon;
@@ -139,6 +140,44 @@ enum NowPlayingState {
 The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music`.
 
 The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget.
+
+##### The `progress` field
+
+As is probably obvious, `progress` is a duration describing how far through the track the player has progressed: how much as played in ms, in other words.
+
+Note that no new track is emitted on the `NowPlaying.stream` as a track progresses: stream updates only happen when the track changes state (playing to paused; vice versa; new track starts; and so on). However, the `progress` field of a track will give you an instantaneous 'correct' value every time it's polled, so to see progress updating in real time create a stateful widge to expose it:
+
+```dart
+class TrackProgressIndicator extends StatefulWidget {
+  final NowPlayingTrack track;
+
+  TrackProgressIndicator(this.track);
+
+  @override
+  _TrackProgressIndicatorState createState() => _TrackProgressIndicatorState();
+}
+
+class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
+  Timer _timer;
+
+  @override
+  void initState() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(widget.track.progress.toString().split('.').first.padLeft(8, '0'));
+  }
+}
+```
 
 ##### Album art and associated images
 

@@ -55,12 +55,14 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
     this.track = track;
     if (_resolveImages) _resolveImageFor(track);
     _controller.add(track);
+    this.track = track;
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
     if (!track.hasOrIsResolvingImage) {
       await track._resolveImage();
-      _controller.add(track.copy());
+      this.track = track.copy();
+      _controller.add(this.track);
     }
   }
 
@@ -104,7 +106,7 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
 
     switch (track.state) {
       case NowPlayingState.playing: return true;
-      case NowPlayingState.paused: return this.track.isStopped || track.id == this.track.id;
+      case NowPlayingState.paused: return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
       case NowPlayingState.stopped: return track.id != this.track.id;
       default: return false;
     }
@@ -151,14 +153,21 @@ class NowPlayingTrack {
   final String artist;
   final String source;
   final Duration duration;
+  final Duration _position;
+  final DateTime _createdAt;
   final NowPlayingState state;
+
+  Duration get progress {
+    if (state == NowPlayingState.playing) return _position + DateTime.now().difference(_createdAt);
+    return _position;
+  }
 
   ImageProvider get icon {
     if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
-  bool get hasIcon => Platform.isIOS || _icons.containsKey(this.id);
+  bool get hasIcon => Platform.isIOS || _icons.containsKey(this.source);
   bool get hasImage => image != null;
   bool get isResolvingImage =>
       _resolutionState == _NowPlayingImageResolutionState.resolving;
@@ -183,7 +192,11 @@ class NowPlayingTrack {
     this.duration = Duration.zero,
     this.state = NowPlayingState.stopped,
     this.source,
-  });
+    Duration position,
+    DateTime createdAt,
+  }) :
+    this._position = position ?? Duration.zero,
+    this._createdAt = createdAt ?? DateTime.now();
 
   factory NowPlayingTrack.fromJson(Map<String, dynamic> json) {
     if (json == null || json.isEmpty) return notPlaying;
@@ -213,6 +226,7 @@ class NowPlayingTrack {
       album: json['album'],
       artist: json['artist'],
       duration: Duration(milliseconds: json['duration'] ?? 0),
+      position: Duration(milliseconds: json['position'] ?? 0),
       state: state,
       source: json['source']
     );
@@ -225,8 +239,10 @@ class NowPlayingTrack {
       album: this.album,
       artist: this.artist,
       duration: this.duration,
+      position: this._position,
       state: this.state,
       source: this.source,
+      createdAt: this._createdAt
     );
 
   bool get isPlaying => this.state == NowPlayingState.playing;
