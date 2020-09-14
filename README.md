@@ -88,6 +88,7 @@ if (!hasShownPermissions) {
     if (pleasePleasePlease) NowPlaying.instance.requestPermissions(force: true);
 }
 ```
+(although this still won't show the settings page if permission is already enabled.)
 
 #### Accessing current now-playing metadata
 
