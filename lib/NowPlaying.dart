@@ -3,13 +3,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
-class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
+class NowPlaying with WidgetsBindingObserver {
   static const _channel = const MethodChannel('gomes.com.es/nowplaying');
   static const _refreshPeriod = const Duration(seconds: 1);
 
