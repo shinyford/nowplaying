@@ -38,6 +38,7 @@ class _MyAppState extends State<MyApp> {
           body: Center(
             child: Consumer<NowPlayingTrack>(
               builder: (context, track, _) {
+                if (track == null) return Container();
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -51,7 +52,6 @@ class _MyAppState extends State<MyApp> {
                       Text(track.state.toString()),
                       Stack(
                         alignment: Alignment.center,
-                        // fit: StackFit.loose,
                         children: [
                           Container(
                             margin: const EdgeInsets.all(8.0),
@@ -109,7 +109,7 @@ class _MyAppState extends State<MyApp> {
 
   Color _fgColorFor(NowPlayingTrack track) {
     switch (track.source) {
-      case "music.apple.com": return Colors.blue;
+      case "com.apple.music": return Colors.blue;
       case "com.hughesmedia.big_finish": return Colors.red;
       case "com.spotify.music": return Colors.green;
       default: return Colors.purpleAccent;
@@ -143,6 +143,13 @@ class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(widget.track.progress.toString().split('.').first.padLeft(8, '0'));
+    final progress = widget.track.progress;
+    final countdown = widget.track.duration - progress;
+    return Column(
+      children: [
+        Text(progress.toString().split('.').first.padLeft(8, '0')),
+        Text(countdown.toString().split('.').first.padLeft(8, '0')),
+      ],
+    );
   }
 }

@@ -25,8 +25,8 @@ class NowPlaying extends ChangeNotifier with WidgetsBindingObserver {
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
 
-  void start({bool resolveImages, NowPlayingImageResolver resolver}) async { // async, but should not be awaited
-    this._resolveImages = resolveImages ?? resolver != null;
+  void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async { // async, but should not be awaited
+    this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? _NowPlayingImageResolver();
 
     _controller = StreamController<NowPlayingTrack>.broadcast();
