@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="generator" content="made with love by dartdoc 0.32.4">
+  <meta name="description" content="nowplaying API docs, for the Dart programming language.">
+  <title>nowplaying - Dart API docs</title>
+
+  
+  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400i,400,300|Source+Sans+Pro:400,300,700" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="static-assets/github.css">
+  <link rel="stylesheet" href="static-assets/styles.css">
+  <link rel="icon" href="static-assets/favicon.png">
+
+</head>
+
+<body data-base-href=""
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li class="self-crumb">nowplaying package</li>
+  </ol>
+  <div class="self-name">nowplaying</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+  <div id="dartdoc-sidebar-left" class="col-xs-6 col-sm-3 col-md-2 sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+      <form class="search-sidebar" role="search">
+        <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+      </form>
+    </header>
+    
+    <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+      <li class="self-crumb">nowplaying package</li>
+    </ol>
+    
+    <h5 class="hidden-xs"><span class="package-name">nowplaying</span> <span class="package-kind">package</span></h5>
+    <ol>
+          <li class="section-title">Libraries</li>
+          <li><a href="nowplaying/nowplaying-library.html">nowplaying</a></li>
+    </ol>
+  </div>
+
+  <div id="dartdoc-main-content" class="col-xs-12 col-sm-9 col-md-8 main-content">
+      <section class="desc markdown">
+        <h1 id="nowplaying">NowPlaying</h1>
+<p>A Flutter plugin for iOS and Android which surfaces metadata around the currently playing
+audio track on the device.</p>
+<p>On Android <code>nowplaying</code> makes use of the <code>NotifiationListenerService</code>, and shows any
+track revealing its play state via a notification.</p>
+<p>On iOS <code>nowplaying</code> is restricted to access to music or media played via the Apple Music/iTunes app.</p>
+<h2 id="installation">Installation</h2>
+<p>Add <code>nowplaying</code> as a dependency in your <code>pubspec.yaml</code> file:</p>
+<pre class="language-dart"><code>dependencies:
+    nowplaying: ^0.1.0
+</code></pre>
+<h4 id="ios">iOS</h4>
+<p>Add the following usage to your <code>ios/Runner/Info.plist</code>:</p>
+<pre class="language-dart"><code>&lt;key&gt;NSAppleMusicUsageDescription&lt;/key&gt;
+&lt;string&gt;We need this to show you what's currently playing&lt;/string&gt;
+</code></pre>
+<h4 id="android">Android</h4>
+<p>To enable the notification listener service, add the following block to your <code>android/app/src/main/AndroidManifest.xml</code>, just before the closing <code>&lt;/application&gt;</code> tag:</p>
+<pre class="language-dart"><code>&lt;service android:name="com.gomes.nowplaying.NowPlayingListenerService"
+    android:label="NowPlayingListenerService"
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.service.notification.NotificationListenerService" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;
+</code></pre>
+<h2 id="usage">Usage</h2>
+<h4 id="initialisation">Initialisation</h4>
+<p>Initialise the <code>nowplaying</code> service by starting it's instance:</p>
+<pre class="language-dart"><code class="language-dart">NowPlaying.instance.start();
+</code></pre>
+<p>This can be done anywhere, including prior to the <code>runApp</code> command.</p>
+<h5 id="permissions">Permissions</h5>
+<p>iOS automatically has the required permissions to access now-playing data, via the usage key added during the installation phase.</p>
+<p>Android users must give explicit permission for the service to access the notification stream from which now-playing data is extracted.</p>
+<p>Test for whether permissions have been given or not via the instance's <code>isEnabled</code> method:</p>
+<pre class="language-dart"><code class="language-dart">final bool isEnabled = await NowPlaying.instance.isEnabled();
+// isEnabled() always returns true on iOS
+if (!isEnabled) {
+    ...
+}
+</code></pre>
+<p>The Android settings page for this permission is a little hard to find, so NowPlaying includes a convenience method to open it:</p>
+<pre class="language-dart"><code class="language-dart">NowPlaying.instance.requestPermissions();
+</code></pre>
+<p>To avoid annoying a user by e.g. showing the permissions page on every app restart, navigation to this page should be limited: as such, the unparameterised <code>requestPermissions</code> function will only open the settings page once for any given install of the app. It returns a boolean: <code>true</code> the first time, when the page has been successfully shown; also <code>true</code> if permission has already been granted (in which case the settings page is not shown); or <code>false</code> if this is a second or later call to the method, with navigation to the settings page prohibited. (Note that <code>requestPermissions()</code> always returns <code>true</code> on iOS).</p>
+<pre class="language-dart"><code class="language-dart">final bool hasShownPermissions = await NowPlaying.instance.requestPermissions();
+</code></pre>
+<p>If you really need to show the permissions page a second time, probably after gently explaining to the user why, you can <code>force</code> it open:</p>
+<pre class="language-dart"><code class="language-dart">if (!hasShownPermissions) {
+    final bool pleasePleasePlease = await Navigator.of(context).pushNamed('ExplainAgainReallyNicelyPage');
+    if (pleasePleasePlease) NowPlaying.instance.requestPermissions(force: true);
+}
+</code></pre>
+<h4 id="accessing-current-now-playing-metadata">Accessing current now-playing metadata</h4>
+<p>Now-playing metadata is exposed via a <code>stream</code> of <code>NowPlayingTrack</code> objects, exposed as <code>NowPlaying.instance.stream</code>. This can be consumed however you'd usually consume a stream, e.g.:</p>
+<pre class="language-dart"><code class="language-dart">StreamProvider.value(
+    value: NowPlaying.instance.stream,
+    child: MaterialApp(
+        home: Scaffold(
+            body: Consumer&lt;NowPlayingTrack&gt;(
+                builder: (context, track, _) {
+                    return Container(
+                        ...
+                    );
+                }
+            )
+        )
+    )
+)
+</code></pre>
+<p>The <code>NowPlayingTrack</code> objects contain the following fields:</p>
+<pre class="language-dart"><code class="language-dart">String title;
+String artist;
+String album;
+String genre;
+Duration duration;
+Duration progress; // check note below
+NowPlayingState state;
+ImageProvider image;
+ImageProvider icon;
+String source;
+</code></pre>
+<p>where <code>NowPlayingState</code> is defined as:</p>
+<pre class="language-dart"><code class="language-dart">enum NowPlayingState {
+  playing, paused, stopped
+}
+</code></pre>
+<p>...which is hopefully self-explanatory.</p>
+<h5 id="icon-and-source-fields"><code>icon</code> and <code>source</code> fields</h5>
+<p>The <code>source</code> of a track is the package name of the app playing the current track: <code>com.spotify.music</code>, for example. On iOS this is always <code>com.apple.music</code>.</p>
+<p>The <code>icon</code> image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding <code>color: Colors.somethingNice</code> and <code>colorBlendMode: BlendMode.srcIn</code> or similar to any <code>Image</code> widget.</p>
+<h5 id="the-progress-field">The <code>progress</code> field</h5>
+<p>As is probably obvious, <code>progress</code> is a duration describing how far through the track the player has progressed, in milliseconds: how much of a track has been played, in other words.</p>
+<p>Note that no new track is emitted on the stream as a track progresses: stream updates only happen when the track changes state (playing to paused; vice versa; new track starts; and so on). However, the <code>progress</code> field of a track will give you an instantaneous 'correct' value every time it's polled, so to see progress updating in real time create a stateful widge to expose it:</p>
+<pre class="language-dart"><code class="language-dart">class TrackProgressIndicator extends StatefulWidget {
+  final NowPlayingTrack track;
+
+  TrackProgressIndicator(this.track);
+
+  @override
+  _TrackProgressIndicatorState createState() =&gt; _TrackProgressIndicatorState();
+}
+
+class _TrackProgressIndicatorState extends State&lt;TrackProgressIndicator&gt; {
+  Timer _timer;
+
+  @override
+  void initState() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) =&gt; setState(() {}));
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(widget.track.progress.toString().split('.').first.padLeft(8, '0'));
+  }
+}
+</code></pre>
+<h5 id="album-art-and-associated-images">Album art and associated images</h5>
+<p>Usually - and almost always, on Android - a track will contain an appropriate <code>ImageProvider</code> in its <code>image</code> field, containing album art or similar.</p>
+<p>On iOS, however, there is a bug or badly documented policy that means album art is only made available if the track being played is in your local library: any tracks streamed from e.g. Apple music playlists are image-free.</p>
+<p><code>NowPlaying</code> can attempt to resolve missing images for you. However, this is a relatively heavy process in terms of memory and processing, so is turned off by default. To enable missing image resolution, set the <code>resolveImages</code> parameter to <code>true</code> when starting the instance:</p>
+<pre class="language-dart"><code class="language-dart">NowPlaying.instance.start(resolveImages: true);
+</code></pre>
+<p>The default image resolution process:</p>
+<ul>
+<li>will only attempt to find an image if none already exists</li>
+<li>makes http calls against the <a href="https://musicbrainz.org/doc/MusicBrainz_API">MusicBrainz api</a> and subsequently the <a href="http://coverartarchive.org/">Cover Art Archive api</a></li>
+</ul>
+<h5 id="overriding-the-image-resolver">Overriding the image resolver</h5>
+<p>You may decide that you want to resolve missing images in a different way, or even override images that have already been found from the metadata. In this case, supply a new image resolver when starting the instance:</p>
+<pre class="language-dart"><code class="language-dart">NowPlaying.instance.start(resolver: MyImageResolver());
+
+...
+
+class MyImageResolver implements NowPlayingImageResolver {
+    @override
+    Future&lt;ImageProvider&gt; resolve(NowPlayingTrack track) async {
+        ...
+    }
+}
+</code></pre>
+<h4 id="credits">Credits</h4>
+<p>Thanks to Fábio A. M. Pereira for his <a href="https://github.com/Chagall/notification-listener-service-example">Notification Listener Service Example</a>, which provided inspiration (and in some cases, let's be honest, actual code) for the Android implementation.</p>
+      </section>
+      
+        <section class="summary">
+            <h2>Libraries</h2>
+          <dl>
+            <dt id="nowplaying">
+              <span class="name"><a href="nowplaying/nowplaying-library.html">nowplaying</a></span>             
+            </dt>
+            <dd>
+               
+            </dd>
+          </dl>
+        </section>
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-right" class="col-xs-6 col-sm-6 col-md-2 sidebar sidebar-offcanvas-right">
+  </div>
+
+</main>
+
+<footer>
+  <span class="no-break">
+    nowplaying
+      0.1.0
+  </span>
+
+</footer>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="static-assets/typeahead.bundle.min.js"></script>
+<script src="static-assets/highlight.pack.js"></script>
+<script src="static-assets/URI.js"></script>
+<script src="static-assets/script.js"></script>
+
+
+</body>
+
+</html>
