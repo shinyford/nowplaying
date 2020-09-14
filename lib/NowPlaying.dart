@@ -327,7 +327,7 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.0 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.1 ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 

@@ -14,7 +14,7 @@ Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
 ```
 dependencies:
-    nowplaying: ^0.1.0
+    nowplaying: ^0.1.1
 ```
 
 #### iOS
@@ -194,7 +194,7 @@ NowPlaying.instance.start(resolveImages: true);
 
 The default image resolution process:
 * will only attempt to find an image if none already exists
-* makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](http://coverartarchive.org/)
+* makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](https://coverartarchive.org/)
 
 ##### Overriding the image resolver
 
