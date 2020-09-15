@@ -67,7 +67,6 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-        <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -114,15 +113,15 @@
     
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
-      <pre class="language-dart"><code class="language-dart">String toString() =&gt;
-  isStopped
+      <pre class="language-dart"><code class="language-dart">String toString() =&gt; isStopped
     ? &#39;NowPlaying: -silence-&#39;
     : &#39;NowPlaying:&#39;
-      &#39;\n title: $title&#39;
-      &#39;\n artist: $artist&#39;
-      &#39;\n album: $album&#39;
-      &#39;\n duration: ${duration.inMilliseconds}ms&#39;
-      &#39;\n stat: $state&#39;;</code></pre>
+        &#39;\n title: $title&#39;
+        &#39;\n artist: $artist&#39;
+        &#39;\n album: $album&#39;
+        &#39;\n duration: ${duration.inMilliseconds}ms&#39;
+        &#39;\n has image: $hasImage&#39;
+        &#39;\n state: $state&#39;;</code></pre>
     </section>
 
   </div> <!-- /.main-content -->
@@ -135,7 +134,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

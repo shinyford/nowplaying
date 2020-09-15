@@ -67,7 +67,6 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-        <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -111,7 +110,10 @@
           
 </section>
         
-                        <section class="summary source-code" id="source">
+                <section class="desc markdown">
+          <p>An image representing the app playing the track</p>
+        </section>
+                <section class="summary source-code" id="source">
           <h2><span>Implementation</span></h2>
           <pre class="language-dart"><code class="language-dart">ImageProvider get icon {
   if (Platform.isIOS) return const AssetImage(&#39;assets&#47;apple_music.png&#39;, package: &#39;nowplaying&#39;);
@@ -130,7 +132,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

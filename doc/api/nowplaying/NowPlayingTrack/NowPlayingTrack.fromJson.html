@@ -67,7 +67,6 @@
       <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-      <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -107,6 +106,11 @@
 </ol>)
     </section>
 
+    <section class="desc markdown">
+      <p>Creates a track from json</p>
+<p>Returns the static <code>notPlaying</code> instance if player is stopped</p>
+<p>Creates image and icon art if not already present/resolved</p>
+    </section>
     
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
@@ -133,15 +137,14 @@
 
   final String id = json[&#39;id&#39;].toString();
   return NowPlayingTrack(
-    id: id,
-    title: json[&#39;title&#39;],
-    album: json[&#39;album&#39;],
-    artist: json[&#39;artist&#39;],
-    duration: Duration(milliseconds: json[&#39;duration&#39;] ?? 0),
-    position: Duration(milliseconds: json[&#39;position&#39;] ?? 0),
-    state: state,
-    source: json[&#39;source&#39;]
-  );
+      id: id,
+      title: json[&#39;title&#39;],
+      album: json[&#39;album&#39;],
+      artist: json[&#39;artist&#39;],
+      duration: Duration(milliseconds: json[&#39;duration&#39;] ?? 0),
+      position: Duration(milliseconds: json[&#39;position&#39;] ?? 0),
+      state: state,
+      source: json[&#39;source&#39;]);
 }</code></pre>
     </section>
 
@@ -155,7 +158,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

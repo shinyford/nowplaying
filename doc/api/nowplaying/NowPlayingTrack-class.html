@@ -71,6 +71,10 @@
   <div id="dartdoc-main-content" class="col-xs-12 col-sm-9 col-md-8 main-content">
       <div><h1><span class="kind-class">NowPlayingTrack</span> class  </h1></div>
 
+    <section class="desc markdown">
+      <p>A container for metadata around a single track state</p>
+<p>Artist, album, track, duration, genre, source, progress</p>
+    </section>
     
 
     <section class="summary offset-anchor" id="constructors">
@@ -87,7 +91,7 @@
           <span class="name"><a href="../nowplaying/NowPlayingTrack/NowPlayingTrack.fromJson.html">NowPlayingTrack.fromJson</a></span><span class="signature">(<span class="parameter" id="fromJson-param-json"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">json</span></span><wbr>)</span>
         </dt>
         <dd>
-           
+          Creates a track from json <a href="../nowplaying/NowPlayingTrack/NowPlayingTrack.fromJson.html">[...]</a>
           <div class="constructor-modifier features">factory</div>
         </dd>
       </dl>
@@ -145,20 +149,12 @@
            
                   <div class="features">read-only</div>
 </dd>
-        <dt id="hasOrIsResolvingImage" class="property">
-          <span class="name"><a href="../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></span>
-          <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>         
-        </dt>
-        <dd>
-           
-                  <div class="features">read-only</div>
-</dd>
         <dt id="icon" class="property">
           <span class="name"><a href="../nowplaying/NowPlayingTrack/icon.html">icon</a></span>
           <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/painting/ImageProvider-class.html">ImageProvider</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span>         
         </dt>
         <dd>
-           
+          An image representing the app playing the track 
                   <div class="features">read-only</div>
 </dd>
         <dt id="id" class="property">
@@ -174,7 +170,7 @@
           <span class="signature">&#8596; <a href="https://api.flutter.dev/flutter/painting/ImageProvider-class.html">ImageProvider</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span>         
         </dt>
         <dd>
-           
+          The image for the track, probably album art <a href="../nowplaying/NowPlayingTrack/image.html">[...]</a>
                   <div class="features">read / write</div>
 </dd>
         <dt id="isPaused" class="property">
@@ -198,7 +194,7 @@
           <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>         
         </dt>
         <dd>
-           
+          true if the image is being resolved, else false 
                   <div class="features">read-only</div>
 </dd>
         <dt id="isStopped" class="property">
@@ -214,7 +210,7 @@
           <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>         
         </dt>
         <dd>
-           
+          true of the image is empty and a resolution hasn't been attempted, else false 
                   <div class="features">read-only</div>
 </dd>
         <dt id="progress" class="property">
@@ -222,7 +218,7 @@
           <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span>         
         </dt>
         <dd>
-           
+          How long the track been has been playing, as a <code>Duration</code> <a href="../nowplaying/NowPlayingTrack/progress.html">[...]</a>
                   <div class="features">read-only</div>
 </dd>
         <dt id="runtimeType" class="property inherited">
@@ -269,7 +265,7 @@
           </span>
                   </dt>
         <dd>
-           
+          Creates a copy of a track, largely so that the stream knows it's mutated 
                   
 </dd>
         <dt id="noSuchMethod" class="callable inherited">
@@ -343,7 +339,6 @@
       <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
       <li><a href="../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
       <li><a href="../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-      <li><a href="../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
       <li><a href="../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
       <li><a href="../nowplaying/NowPlayingTrack/id.html">id</a></li>
       <li><a href="../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -379,7 +374,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

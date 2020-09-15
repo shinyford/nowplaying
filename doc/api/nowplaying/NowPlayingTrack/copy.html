@@ -67,7 +67,6 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-        <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -108,21 +107,23 @@
 (<wbr>)
       
     </section>
+    <section class="desc markdown">
+      <p>Creates a copy of a track, largely so that the stream knows it's mutated</p>
+    </section>
     
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
-      <pre class="language-dart"><code class="language-dart">NowPlayingTrack copy() =&gt;
-  NowPlayingTrack(
-    id: this.id,
-    title: this.title,
-    album: this.album,
-    artist: this.artist,
-    duration: this.duration,
-    position: this._position,
-    state: this.state,
-    source: this.source,
-    createdAt: this._createdAt
-  );</code></pre>
+      <pre class="language-dart"><code class="language-dart">NowPlayingTrack copy() =&gt; NowPlayingTrack(
+  id: this.id,
+  title: this.title,
+  album: this.album,
+  artist: this.artist,
+  duration: this.duration,
+  position: this._position,
+  state: this.state,
+  source: this.source,
+  createdAt: this._createdAt
+);</code></pre>
     </section>
 
   </div> <!-- /.main-content -->
@@ -135,7 +136,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

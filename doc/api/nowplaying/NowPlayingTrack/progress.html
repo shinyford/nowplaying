@@ -67,7 +67,6 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-        <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -111,7 +110,14 @@
           
 </section>
         
-                        <section class="summary source-code" id="source">
+                <section class="desc markdown">
+          <p>How long the track been has been playing, as a <code>Duration</code></p>
+<p>If the track is playing: how much had been played at the time the state
+was recorded, plus elapsed time since then</p>
+<p>If the track is not playing: how much had been played at the time the state
+was recorded</p>
+        </section>
+                <section class="summary source-code" id="source">
           <h2><span>Implementation</span></h2>
           <pre class="language-dart"><code class="language-dart">Duration get progress {
   if (state == NowPlayingState.playing) return _position + DateTime.now().difference(_createdAt);
@@ -130,7 +136,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>

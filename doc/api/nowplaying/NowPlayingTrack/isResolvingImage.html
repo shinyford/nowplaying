@@ -67,7 +67,6 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasIcon.html">hasIcon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/hasImage.html">hasImage</a></li>
-        <li><a href="../../nowplaying/NowPlayingTrack/hasOrIsResolvingImage.html">hasOrIsResolvingImage</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/icon.html">icon</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/id.html">id</a></li>
         <li><a href="../../nowplaying/NowPlayingTrack/image.html">image</a></li>
@@ -111,10 +110,12 @@
           
 </section>
         
-                        <section class="summary source-code" id="source">
+                <section class="desc markdown">
+          <p>true if the image is being resolved, else false</p>
+        </section>
+                <section class="summary source-code" id="source">
           <h2><span>Implementation</span></h2>
-          <pre class="language-dart"><code class="language-dart">bool get isResolvingImage =&gt;
-    _resolutionState == _NowPlayingImageResolutionState.resolving;</code></pre>
+          <pre class="language-dart"><code class="language-dart">bool get isResolvingImage =&gt; _resolutionState == _NowPlayingImageResolutionState.resolving;</code></pre>
         </section>
 </section>
         
@@ -128,7 +129,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.0
+      0.1.2
   </span>
 
 </footer>
