@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.1.3
-- improved image resolutionalgorithm
+- improved image resolution algorithm
 
 ## 0.1.2
 - deal with shonky iOS now playing information, which variously returns
