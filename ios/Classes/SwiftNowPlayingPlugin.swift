@@ -21,8 +21,9 @@ public class SwiftNowPlayingPlugin: NSObject, FlutterPlugin {
       case "track":
           let musicPlayer = MPMusicPlayerController.systemMusicPlayer
           if let nowPlayingItem = musicPlayer.nowPlayingItem {
-            if trackData["id"] == nil || (trackData["id"] as! UInt64) != nowPlayingItem.persistentID {
-              trackData["id"] = nowPlayingItem.persistentID
+            let id = "\(nowPlayingItem.title ?? ""):\(nowPlayingItem.artist ?? ""):\(nowPlayingItem.albumTitle ?? "")"
+            if trackData["id"] == nil || (trackData["id"] as! String) != id {
+              trackData["id"] = id
               trackData["album"] = nowPlayingItem.albumTitle
               trackData["title"] = nowPlayingItem.title
               trackData["artist"] = nowPlayingItem.artist
