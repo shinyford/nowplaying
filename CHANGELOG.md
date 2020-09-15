@@ -1,17 +1,18 @@
+# Changelog
+
+## 0.1.3
+- improved image resolutionalgorithm
+
+## 0.1.2
+- deal with shonky iOS now playing information, which variously returns
+  images and persistent IDs as empty or zero
+- improve in-code documentation
+
+## 0.1.1
+- remove unnecessary imports and ChangeNotifier
+
 ## 0.1.0
-
-* 0.1.0: first release:
-    - stream of now playing tracks
-    - optional resolution of missing album art
-
-* 0.1.1: bug fix
-    - remove unnecessary imports and ChangeNotifier
-
-* 0.1.2: bug fix; better docs
-    - deal with shonky iOS now playing information, which variously returns
-      images and persistent IDs as empty or zero
-    - improve in-code documentation
-
-* 0.1.3: image resolution
-    - improved algorithm
+- initial release
+- stream of now playing tracks
+- optional resolution of missing album art
 
