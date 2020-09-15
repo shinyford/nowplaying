@@ -12,3 +12,6 @@
       images and persistent IDs as empty or zero
     - improve in-code documentation
 
+* 0.1.3: image resolution
+    - improved algorithm
+
