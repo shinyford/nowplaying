@@ -127,19 +127,17 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   bool _shouldNotifyFor(NowPlayingTrack track) {
-    if (track.id == this.track.id && track.state == this.track.state)
-      return false;
-
-    switch (track.state) {
-      case NowPlayingState.playing:
-        return true;
-      case NowPlayingState.paused:
-        return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
-      case NowPlayingState.stopped:
-        return track.id != this.track.id;
-      default:
-        return false;
+    if (track.id != this.track.id || track.state != this.track.state || this.track.position != track.position) {
+      switch (track.state) {
+        case NowPlayingState.playing:
+          return true;
+        case NowPlayingState.paused:
+          return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
+        case NowPlayingState.stopped:
+          return track.id != this.track.id;
+      }
     }
+    return false;
   }
   // /iOS
 
@@ -174,7 +172,9 @@ enum _NowPlayingImageResolutionState { unresolved, resolving, resolved }
 ///
 /// Artist, album, track, duration, genre, source, progress
 class NowPlayingTrack {
-  static NowPlayingTrack notPlaying = NowPlayingTrack();
+  static final NowPlayingTrack notPlaying = NowPlayingTrack();
+
+  static final _essentialRegExp = RegExp(r'\(.*\)');
 
   static final _images = _LruMap<String, ImageProvider>(size: 3);
   static final _resolutionStates =
@@ -187,7 +187,7 @@ class NowPlayingTrack {
   final String artist;
   final String source;
   final Duration duration;
-  final Duration _position;
+  final Duration position;
   final DateTime _createdAt;
   final NowPlayingState state;
 
@@ -199,9 +199,18 @@ class NowPlayingTrack {
   /// If the track is not playing: how much had been played at the time the state
   /// was recorded
   Duration get progress {
-    if (state == NowPlayingState.playing) return _position + DateTime.now().difference(_createdAt);
-    return _position;
+    if (state == NowPlayingState.playing) return position + DateTime.now().difference(_createdAt);
+    return position;
   }
+
+  String get essentialAlbum => _essential(album);
+  String get essentialTitle => _essential(title);
+  String _essential(String text) {
+    if (text == null) return null;
+    final String essentialText = text.replaceAll(_essentialRegExp, '').trim();
+    return essentialText.isEmpty ? text : essentialText;
+  }
+
 
   /// An image representing the app playing the track
   ImageProvider get icon {
@@ -238,11 +247,9 @@ class NowPlayingTrack {
     this.duration = Duration.zero,
     this.state = NowPlayingState.stopped,
     this.source,
-    Duration position,
+    this.position = Duration.zero,
     DateTime createdAt,
-  })  : this._position = position ?? Duration.zero,
-        this._createdAt = createdAt ?? DateTime.now();
-
+  })  : this._createdAt = createdAt ?? DateTime.now();
   /// Creates a track from json
   ///
   /// Returns the static `notPlaying` instance if player is stopped
@@ -255,6 +262,7 @@ class NowPlayingTrack {
     if (state == NowPlayingState.stopped) return notPlaying;
 
     final String imageId = '${json['artist']}:${json['album']}';
+
     if (!_images.containsKey(imageId)) {
       final Uint8List imageData = json['image'];
       if (imageData is Uint8List) {
@@ -263,22 +271,24 @@ class NowPlayingTrack {
         final String imageUri = json['imageUri'];
         if (imageUri is String) _images[imageId] = NetworkImage(imageUri);
       }
-      _resolutionStates[imageId] = _NowPlayingImageResolutionState.unresolved;
     }
+
+    _resolutionStates[imageId] ??= _NowPlayingImageResolutionState.unresolved;
 
     final Uint8List iconData = json['sourceIcon'];
     if (iconData is Uint8List) _icons[json['source']] ??= MemoryImage(iconData);
 
     final String id = json['id'].toString();
     return NowPlayingTrack(
-        id: id,
-        title: json['title'],
-        album: json['album'],
-        artist: json['artist'],
-        duration: Duration(milliseconds: json['duration'] ?? 0),
-        position: Duration(milliseconds: json['position'] ?? 0),
-        state: state,
-        source: json['source']);
+      id: id,
+      title: json['title'],
+      album: json['album'],
+      artist: json['artist'],
+      duration: Duration(milliseconds: json['duration'] ?? 0),
+      position: Duration(milliseconds: json['position'] ?? 0),
+      state: state,
+      source: json['source']
+    );
   }
 
   /// Creates a copy of a track, largely so that the stream knows it's mutated
@@ -288,7 +298,7 @@ class NowPlayingTrack {
     album: this.album,
     artist: this.artist,
     duration: this.duration,
-    position: this._position,
+    position: this.position,
     state: this.state,
     source: this.source,
     createdAt: this._createdAt
@@ -327,6 +337,8 @@ abstract class NowPlayingImageResolver {
 }
 
 class _NowPlayingImageResolver implements NowPlayingImageResolver {
+  static final RegExp _rationaliseRegExp = RegExp(r'the |and |& |\(.*\)');
+
   Future<ImageProvider> resolve(NowPlayingTrack track) async {
     if (track.hasImage) return null;
     if (track.artist == null || track.album == null) return null;
@@ -335,26 +347,29 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<ImageProvider> _getAlbumCover(NowPlayingTrack track) async {
-    final String albumTitle = Uri.encodeQueryComponent(_rationalise(track.album));
-    final String artistName = _rationalise(track.artist);
+    final String query = Uri.encodeQueryComponent(
+      [
+        if (track.artist != null) 'artist:(${_rationalise(track.artist)})',
+        if (track.album != null) 'release:(${_rationalise(track.album)})',
+      ].join(' AND ')
+    );
+    if (query.isEmpty) return null;
 
-    final json = await _getJson('https://musicbrainz.org/ws/2/release?type=album&limit=100&query=$albumTitle');
+    print('NowPlaying - image resolution query: $query');
+
+    final json = await _getJson('https://musicbrainz.org/ws/2/release?primarytype=album&limit=100&query=$query');
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
-      for (Map<String, dynamic> artist in release['artist-credit']) {
-        if (artist['joinphrase'] != null) continue;
-        if (_rationalise(artist['name']) == artistName) {
-          final albumArt = await _getAlbumArt(release['id']);
-          if (albumArt != null) return albumArt;
-        }
-      }
+      final albumArt = await _getAlbumArt(release['id']);
+      if (albumArt != null) return albumArt;
     }
 
     return null;
   }
 
   Future<ImageProvider> _getAlbumArt(String mbid) async {
+    print('NowPlaying - trying to find cover for $mbid');
     final json = await _getJson('https://coverartarchive.org/release/$mbid');
     if (json == null) return null;
 
@@ -378,7 +393,7 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.2 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.3 ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 
@@ -391,8 +406,11 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     return completer.future;
   }
 
-  String _rationalise(String text) =>
-      text.toLowerCase().replaceAll('the ', '').trim();
+  String _rationalise(String text) {
+    final lowerText = text.toLowerCase().trim();
+    if (lowerText == 'the the') return lowerText; // the Matt Johnson exemption
+    return lowerText.replaceAll(_rationaliseRegExp, '').trim();
+  }
 }
 
 class _LruMap<K, V> {
