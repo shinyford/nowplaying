@@ -1,3 +1,9 @@
+/// A library that surfaces metadata for the track currently playing over the
+/// device's audio, outside the control of the importing app.
+///
+/// Use a NotificationListenerService for Android; polls the current playing
+/// information from the systemMusicPlayer for iOS
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -7,6 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// A container for the service. Connects with the underlying OS via a method
+/// channel to pull out track data.
 class NowPlaying with WidgetsBindingObserver {
   static const _channel = const MethodChannel('gomes.com.es/nowplaying');
   static const _refreshPeriod = const Duration(seconds: 1);
@@ -23,8 +31,11 @@ class NowPlaying with WidgetsBindingObserver {
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
 
-  void start(
-      {bool resolveImages = false, NowPlayingImageResolver resolver}) async {
+  /// Starts the service.
+  ///
+  /// Initialises stream, sets up the app lifecycle observer, starts a polling
+  /// timer on iOS, sets incoming method handler for Android
+  void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? _NowPlayingImageResolver();
@@ -34,12 +45,14 @@ class NowPlaying with WidgetsBindingObserver {
 
     await _bindToWidgetsBinding();
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
-    if (Platform.isIOS)
-      _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+    if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
     _refresh();
   }
 
+  /// Stops the service.
+  ///
+  /// Kills stream, timer and method call handler
   void stop() {
     _controller?.close();
     _controller = null;
@@ -60,21 +73,32 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
-    if (!track.hasOrIsResolvingImage) {
+    if (track.needsResolving) {
       await track._resolveImage();
       this.track = track.copy();
       _controller.add(this.track);
     }
   }
 
+  /// Returns true is the service has permission granted by the systme and user
   Future<bool> isEnabled() async =>
       Platform.isIOS || await _channel.invokeMethod<bool>('isEnabled');
 
+  /// Opens an OS settings page
+  ///
+  /// Returns true if:
+  ///   - OS is iOS, or
+  ///   - permission has already been given, or
+  ///   - the settings screen has not been opened by this app before, or
+  ///   - opening the screen this time is `force`d
+  ///
+  /// Returns false if:
+  ///   - OS is Android, and
+  ///   - permission has not been given by the user, and
+  ///   - the settings screen has been opened by this app before
   Future<bool> requestPermissions({bool force = false}) async {
     if (Platform.isIOS) return true;
 
-    // check to see if we've requested before
-    // (unless force == true, in which case make the request again)
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/com.gomes.nowplaying');
     if (!force && await file.exists()) return false;
@@ -110,8 +134,7 @@ class NowPlaying with WidgetsBindingObserver {
       case NowPlayingState.playing:
         return true;
       case NowPlayingState.paused:
-        return this.track.isStopped ||
-            (this.track.isPlaying && track.id == this.track.id);
+        return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
       case NowPlayingState.stopped:
         return track.id != this.track.id;
       default:
@@ -125,11 +148,13 @@ class NowPlaying with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       return Future.value(true);
     } else {
-      return Future.delayed(
-          const Duration(milliseconds: 250), _bindToWidgetsBinding);
+      return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
     }
   }
 
+  /// Respond to changes in the app lifecycle state, on iOS
+  ///
+  /// Restart timer if resumed; else cancel it
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!Platform.isIOS) return;
 
@@ -145,6 +170,9 @@ class NowPlaying with WidgetsBindingObserver {
 
 enum _NowPlayingImageResolutionState { unresolved, resolving, resolved }
 
+/// A container for metadata around a single track state
+///
+/// Artist, album, track, duration, genre, source, progress
 class NowPlayingTrack {
   static NowPlayingTrack notPlaying = NowPlayingTrack();
 
@@ -163,35 +191,44 @@ class NowPlayingTrack {
   final DateTime _createdAt;
   final NowPlayingState state;
 
+  /// How long the track been has been playing, as a `Duration`
+  ///
+  /// If the track is playing: how much had been played at the time the state
+  /// was recorded, plus elapsed time since then
+  ///
+  /// If the track is not playing: how much had been played at the time the state
+  /// was recorded
   Duration get progress {
-    if (state == NowPlayingState.playing)
-      return _position + DateTime.now().difference(_createdAt);
+    if (state == NowPlayingState.playing) return _position + DateTime.now().difference(_createdAt);
     return _position;
   }
 
+  /// An image representing the app playing the track
   ImageProvider get icon {
-    if (Platform.isIOS)
-      return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
   bool get hasIcon => Platform.isIOS || _icons.containsKey(this.source);
   bool get hasImage => image != null;
-  bool get isResolvingImage =>
-      _resolutionState == _NowPlayingImageResolutionState.resolving;
-  bool get needsResolving =>
-      _resolutionState == _NowPlayingImageResolutionState.unresolved;
-  bool get hasOrIsResolvingImage => hasImage || isResolvingImage;
+
+  /// true if the image is being resolved, else false
+  bool get isResolvingImage => _resolutionState == _NowPlayingImageResolutionState.resolving;
+
+  /// true of the image is empty and a resolution hasn't been attempted, else false
+  bool get needsResolving => _resolutionState == _NowPlayingImageResolutionState.unresolved;
 
   String get _imageId => '$artist:$album';
 
+  /// The image for the track, probably album art
+  ///
+  /// A bit of sophistry here: images are stored per album rather than per
+  /// track, for efficiency, and shared.
   ImageProvider get image => _images[_imageId];
   set image(ImageProvider image) => _images[_imageId] = image;
 
-  _NowPlayingImageResolutionState get _resolutionState =>
-      _resolutionStates[_imageId];
-  set _resolutionState(_NowPlayingImageResolutionState state) =>
-      _resolutionStates[_imageId] = state;
+  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[_imageId];
+  set _resolutionState(_NowPlayingImageResolutionState state) => _resolutionStates[_imageId] = state;
 
   NowPlayingTrack({
     this.id,
@@ -206,6 +243,11 @@ class NowPlayingTrack {
   })  : this._position = position ?? Duration.zero,
         this._createdAt = createdAt ?? DateTime.now();
 
+  /// Creates a track from json
+  ///
+  /// Returns the static `notPlaying` instance if player is stopped
+  ///
+  /// Creates image and icon art if not already present/resolved
   factory NowPlayingTrack.fromJson(Map<String, dynamic> json) {
     if (json == null || json.isEmpty) return notPlaying;
 
@@ -239,16 +281,18 @@ class NowPlayingTrack {
         source: json['source']);
   }
 
+  /// Creates a copy of a track, largely so that the stream knows it's mutated
   NowPlayingTrack copy() => NowPlayingTrack(
-      id: this.id,
-      title: this.title,
-      album: this.album,
-      artist: this.artist,
-      duration: this.duration,
-      position: this._position,
-      state: this.state,
-      source: this.source,
-      createdAt: this._createdAt);
+    id: this.id,
+    title: this.title,
+    album: this.album,
+    artist: this.artist,
+    duration: this.duration,
+    position: this._position,
+    state: this.state,
+    source: this.source,
+    createdAt: this._createdAt
+  );
 
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
@@ -261,7 +305,8 @@ class NowPlayingTrack {
           '\n artist: $artist'
           '\n album: $album'
           '\n duration: ${duration.inMilliseconds}ms'
-          '\n stat: $state';
+          '\n has image: $hasImage'
+          '\n state: $state';
 
   Future<void> _resolveImage() async {
     if (this.needsResolving) {
@@ -272,8 +317,11 @@ class NowPlayingTrack {
   }
 }
 
+/// The current playing state of a track
 enum NowPlayingState { playing, paused, stopped }
 
+/// Resolve (probably) missing images for a track by returning an
+/// appropriate `ImageProvider` for it
 abstract class NowPlayingImageResolver {
   Future<ImageProvider> resolve(NowPlayingTrack track);
 }
@@ -287,11 +335,10 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<ImageProvider> _getAlbumCover(NowPlayingTrack track) async {
-    final String albumTitle = _rationalise(track.album);
+    final String albumTitle = Uri.encodeQueryComponent(_rationalise(track.album));
     final String artistName = _rationalise(track.artist);
 
-    final json = await _getJson(
-        'https://musicbrainz.org/ws/2/release?type=album&limit=100&query=$albumTitle');
+    final json = await _getJson('https://musicbrainz.org/ws/2/release?type=album&limit=100&query=$albumTitle');
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
@@ -331,8 +378,7 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent',
-        'NowPlaying Flutter Package/0.1.1 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.2 ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 

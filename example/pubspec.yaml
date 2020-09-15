@@ -1,4 +1,4 @@
-name: NowPlaying_example
+name: nowplaying_example
 description: Demonstrates how to use the NowPlaying plugin.
 
 # The following line prevents the package from being accidentally published to
