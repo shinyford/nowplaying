@@ -250,6 +250,7 @@ class NowPlayingTrack {
     this.position = Duration.zero,
     DateTime createdAt,
   })  : this._createdAt = createdAt ?? DateTime.now();
+
   /// Creates a track from json
   ///
   /// Returns the static `notPlaying` instance if player is stopped
@@ -321,7 +322,8 @@ class NowPlayingTrack {
   Future<void> _resolveImage() async {
     if (this.needsResolving) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      this.image = await NowPlaying.instance._resolver.resolve(this);
+      final ImageProvider image = await NowPlaying.instance._resolver.resolve(this);
+      if (image != null) this.image = image;
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
   }

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.4
+- fix bug with image resolution, whereby existing image was discarded
+
 ## 0.1.3
 - improved image resolution algorithm
 
