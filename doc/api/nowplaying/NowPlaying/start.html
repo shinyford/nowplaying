@@ -97,7 +97,7 @@
       <div><h1><span class="kind-method">start</span> method </h1></div>
 
     <section class="multi-line-signature">
-      <span class="returntype">void</span>
+      <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
             <span class="name ">start</span>
 (<wbr><ol class="parameter-list"><li><span class="parameter" id="start-param-resolveImages">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">resolveImages</span>: <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="start-param-resolver"><span class="type-annotation"><a href="../../nowplaying/NowPlayingImageResolver-class.html">NowPlayingImageResolver</a></span> <span class="parameter-name">resolver</span>}</span></li>
@@ -112,10 +112,12 @@ timer on iOS, sets incoming method handler for Android</p>
     
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
-      <pre class="language-dart"><code class="language-dart">void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
+      <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
   &#47;&#47; async, but should not be awaited
   this._resolveImages = resolver != null || resolveImages;
   this._resolver = resolver ?? _NowPlayingImageResolver();
+
+  this.track = NowPlayingTrack.notPlaying;
 
   _controller = StreamController&lt;NowPlayingTrack&gt;.broadcast();
   _controller.add(NowPlayingTrack.notPlaying);
@@ -124,7 +126,7 @@ timer on iOS, sets incoming method handler for Android</p>
   if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
   if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
-  _refresh();
+  await _refresh();
 }</code></pre>
     </section>
 
@@ -138,7 +140,7 @@ timer on iOS, sets incoming method handler for Android</p>
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.4
+      1.0.1
   </span>
 
 </footer>

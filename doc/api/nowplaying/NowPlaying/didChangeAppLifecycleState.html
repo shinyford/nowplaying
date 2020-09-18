@@ -111,10 +111,8 @@
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
       <pre class="language-dart"><code class="language-dart">void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (!Platform.isIOS) return;
-
   if (state == AppLifecycleState.resumed) {
-    _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
+    if (Platform.isIOS) _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
     _refresh();
   } else {
     _refreshTimer?.cancel();
@@ -133,7 +131,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.4
+      1.0.1
   </span>
 
 </footer>

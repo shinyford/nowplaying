@@ -133,7 +133,6 @@
       final String imageUri = json[&#39;imageUri&#39;];
       if (imageUri is String) _images[imageId] = NetworkImage(imageUri);
     }
-    print(&#39;Image for track &quot;$imageId&quot; ${_images[imageId]}&#39;);
   }
 
   _resolutionStates[imageId] ??= _NowPlayingImageResolutionState.unresolved;
@@ -165,7 +164,7 @@
 <footer>
   <span class="no-break">
     nowplaying
-      0.1.4
+      1.0.1
   </span>
 
 </footer>
