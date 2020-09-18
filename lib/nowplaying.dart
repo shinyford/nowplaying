@@ -35,10 +35,12 @@ class NowPlaying with WidgetsBindingObserver {
   ///
   /// Initialises stream, sets up the app lifecycle observer, starts a polling
   /// timer on iOS, sets incoming method handler for Android
-  void start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
+  Future<void> start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? _NowPlayingImageResolver();
+
+    this.track = NowPlayingTrack.notPlaying;
 
     _controller = StreamController<NowPlayingTrack>.broadcast();
     _controller.add(NowPlayingTrack.notPlaying);
@@ -47,7 +49,7 @@ class NowPlaying with WidgetsBindingObserver {
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
     if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
-    _refresh();
+    await _refresh();
   }
 
   /// Stops the service.
@@ -66,7 +68,6 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   void _updateAndNotifyFor(NowPlayingTrack track) {
-    this.track = track;
     if (_resolveImages) _resolveImageFor(track);
     _controller.add(track);
     this.track = track;
@@ -127,7 +128,11 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   bool _shouldNotifyFor(NowPlayingTrack track) {
-    if (track.id != this.track.id || track.state != this.track.state || this.track.position != track.position) {
+    final positionDifferential = (track.position - this.track.position).inMilliseconds;
+    final timeDifferential = track._createdAt.difference(this.track._createdAt).inMilliseconds;
+    final positionUnexpected = positionDifferential < 0 || positionDifferential > timeDifferential + 250;
+
+    if (track.id != this.track.id || track.state != this.track.state || positionUnexpected) {
       switch (track.state) {
         case NowPlayingState.playing:
           return true;
@@ -141,10 +146,10 @@ class NowPlaying with WidgetsBindingObserver {
   }
   // /iOS
 
-  Future<bool> _bindToWidgetsBinding() {
+  Future<bool> _bindToWidgetsBinding() async {
     if (WidgetsBinding.instance?.isRootWidgetAttached == true) {
       WidgetsBinding.instance.addObserver(this);
-      return Future.value(true);
+      return true;
     } else {
       return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
     }
@@ -154,10 +159,8 @@ class NowPlaying with WidgetsBindingObserver {
   ///
   /// Restart timer if resumed; else cancel it
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!Platform.isIOS) return;
-
     if (state == AppLifecycleState.resumed) {
-      _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
+      if (Platform.isIOS) _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
       _refresh();
     } else {
       _refreshTimer?.cancel();
@@ -174,7 +177,7 @@ enum _NowPlayingImageResolutionState { unresolved, resolving, resolved }
 class NowPlayingTrack {
   static final NowPlayingTrack notPlaying = NowPlayingTrack();
 
-  static final _essentialRegExp = RegExp(r'\(.*\)');
+  static final _essentialRegExp = RegExp(r'\(.*\)|\[.*\]');
 
   static final _images = _LruMap<String, ImageProvider>(size: 3);
   static final _resolutionStates =
@@ -316,6 +319,7 @@ class NowPlayingTrack {
           '\n artist: $artist'
           '\n album: $album'
           '\n duration: ${duration.inMilliseconds}ms'
+          '\n position: ${position.inMilliseconds}ms'
           '\n has image: $hasImage'
           '\n state: $state';
 
