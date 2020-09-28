@@ -4,7 +4,6 @@
 - Add parent bundle id/package name to MusizBrainz UA for recognition of possible commercial app usage
 - Expose `DefaultNowPlayingImageResolver` so that it can be extended
 - Make track info refresh when app foregrounded
-- Fallback to duckduckgo search for image resolution
 - Change logic re: updating caller when track finshes playing
 
 ## 1.0.1
