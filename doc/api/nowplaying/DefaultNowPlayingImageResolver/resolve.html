@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the resolve method from the NowPlayingImageResolver class, for the Dart programming language.">
-  <title>resolve method - NowPlayingImageResolver class - nowplaying library - Dart API</title>
+  <meta name="description" content="API docs for the resolve method from the DefaultNowPlayingImageResolver class, for the Dart programming language.">
+  <title>resolve method - DefaultNowPlayingImageResolver class - nowplaying library - Dart API</title>
 
   
   <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400i,400,300|Source+Sans+Pro:400,300,700" rel="stylesheet">
@@ -26,8 +26,8 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">nowplaying</a></li>
     <li><a href="../../nowplaying/nowplaying-library.html">nowplaying</a></li>
-    <li><a href="../../nowplaying/NowPlayingImageResolver-class.html">NowPlayingImageResolver</a></li>
-    <li class="self-crumb">resolve abstract method</li>
+    <li><a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html">DefaultNowPlayingImageResolver</a></li>
+    <li class="self-crumb">resolve method</li>
   </ol>
   <div class="self-name">resolve</div>
   <form class="search navbar-right" role="search">
@@ -47,28 +47,28 @@
     <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
       <li><a href="../../index.html">nowplaying</a></li>
       <li><a href="../../nowplaying/nowplaying-library.html">nowplaying</a></li>
-      <li><a href="../../nowplaying/NowPlayingImageResolver-class.html">NowPlayingImageResolver</a></li>
-      <li class="self-crumb">resolve abstract method</li>
+      <li><a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html">DefaultNowPlayingImageResolver</a></li>
+      <li class="self-crumb">resolve method</li>
     </ol>
     
-    <h5>NowPlayingImageResolver class</h5>
+    <h5>DefaultNowPlayingImageResolver class</h5>
     <ol>
     
-        <li class="section-title"><a href="../../nowplaying/NowPlayingImageResolver-class.html#constructors">Constructors</a></li>
-        <li><a href="../../nowplaying/NowPlayingImageResolver/NowPlayingImageResolver.html">NowPlayingImageResolver</a></li>
+        <li class="section-title"><a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html#constructors">Constructors</a></li>
+        <li><a href="../../nowplaying/DefaultNowPlayingImageResolver/DefaultNowPlayingImageResolver.html">DefaultNowPlayingImageResolver</a></li>
     
         <li class="section-title inherited">
-            <a href="../../nowplaying/NowPlayingImageResolver-class.html#instance-properties">Properties</a>
+            <a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html#instance-properties">Properties</a>
         </li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></li>
     
-        <li class="section-title"><a href="../../nowplaying/NowPlayingImageResolver-class.html#instance-methods">Methods</a></li>
+        <li class="section-title"><a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html#instance-methods">Methods</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
-        <li><a href="../../nowplaying/NowPlayingImageResolver/resolve.html">resolve</a></li>
+        <li><a href="../../nowplaying/DefaultNowPlayingImageResolver/resolve.html">resolve</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></li>
     
-        <li class="section-title inherited"><a href="../../nowplaying/NowPlayingImageResolver-class.html#operators">Operators</a></li>
+        <li class="section-title inherited"><a href="../../nowplaying/DefaultNowPlayingImageResolver-class.html#operators">Operators</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></li>
     
     
@@ -86,7 +86,7 @@
             <span class="name ">resolve</span>
 (<wbr><ol class="parameter-list"><li><span class="parameter" id="resolve-param-track"><span class="type-annotation"><a href="../../nowplaying/NowPlayingTrack-class.html">NowPlayingTrack</a></span> <span class="parameter-name">track</span></span></li>
 </ol>)
-      
+      <div class="features">override</div>
     </section>
     <section class="desc markdown">
       <p>Returns an <code>ImageProvider</code> for a given <code>NowPlayingTrack</code></p>
@@ -97,7 +97,10 @@ been found in the system metadata) <code>resolve</code> should return <code>null
     
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
-      <pre class="language-dart"><code class="language-dart">Future&lt;ImageProvider&gt; resolve(NowPlayingTrack track);</code></pre>
+      <pre class="language-dart"><code class="language-dart">Future&lt;ImageProvider&gt; resolve(NowPlayingTrack track) async {
+  if (track.hasImage) return null;
+  return _getAlbumCover(track);
+}</code></pre>
     </section>
 
   </div> <!-- /.main-content -->

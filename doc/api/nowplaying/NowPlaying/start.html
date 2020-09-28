@@ -115,7 +115,7 @@ timer on iOS, sets incoming method handler for Android</p>
       <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
   &#47;&#47; async, but should not be awaited
   this._resolveImages = resolver != null || resolveImages;
-  this._resolver = resolver ?? _NowPlayingImageResolver();
+  this._resolver = resolver ?? DefaultNowPlayingImageResolver();
 
   this.track = NowPlayingTrack.notPlaying;
 
@@ -125,6 +125,9 @@ timer on iOS, sets incoming method handler for Android</p>
   await _bindToWidgetsBinding();
   if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
   if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+
+  final info = await PackageInfo.fromPlatform();
+  print(&#39;NowPlaying is part of ${info.packageName}&#39;);
 
   await _refresh();
 }</code></pre>
@@ -140,7 +143,7 @@ timer on iOS, sets incoming method handler for Android</p>
 <footer>
   <span class="no-break">
     nowplaying
-      1.0.1
+      1.0.2
   </span>
 
 </footer>

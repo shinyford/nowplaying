@@ -64,7 +64,7 @@ track revealing its play state via a notification.</p>
 <h2 id="installation">Installation</h2>
 <p>Add <code>nowplaying</code> as a dependency in your <code>pubspec.yaml</code> file:</p>
 <pre class="language-dart"><code>dependencies:
-    nowplaying: ^1.0.1
+    nowplaying: ^1.0.2
 </code></pre>
 <h3 id="ios">iOS</h3>
 <p>Add the following usage to your <code>ios/Runner/Info.plist</code>:</p>
@@ -87,7 +87,7 @@ track revealing its play state via a notification.</p>
 <pre class="language-dart"><code class="language-dart">NowPlaying.instance.start();
 </code></pre>
 <p>This can be done anywhere, including prior to the <code>runApp</code> command.</p>
-<h4 id="permissions">Permissions</h4>
+<h3 id="permissions">Permissions</h3>
 <p>iOS automatically has the required permissions to access now-playing data, via the usage key added during the installation phase.</p>
 <p>Android users must give explicit permission for the service to access the notification stream from which now-playing data is extracted.</p>
 <p>Test for whether permissions have been given or not via the instance's <code>isEnabled</code> method:</p>
@@ -111,7 +111,7 @@ if (!isEnabled) {
 </code></pre>
 <p>(although this still won't show the settings page if permission is already enabled.)</p>
 <h3 id="accessing-current-now-playing-metadata">Accessing current now-playing metadata</h3>
-<p>Now-playing metadata is exposed via a <code>stream</code> of <code>NowPlayingTrack</code> objects, exposed as <code>NowPlaying.instance.stream</code>. This can be consumed however you'd usually consume a stream, e.g.:</p>
+<p>Now-playing metadata is deliverd into the parent app via a <code>stream</code> of <code>NowPlayingTrack</code> objects, exposed as <code>NowPlaying.instance.stream</code>. This can be consumed however you'd usually consume a stream, e.g.:</p>
 <pre class="language-dart"><code class="language-dart">StreamProvider.value(
     value: NowPlaying.instance.stream,
     child: MaterialApp(
@@ -145,10 +145,10 @@ String source;
 }
 </code></pre>
 <p>...which is hopefully self-explanatory.</p>
-<h4 id="icon-and-source-fields"><code>icon</code> and <code>source</code> fields</h4>
+<h3 id="icon-and-source-fields"><code>icon</code> and <code>source</code> fields</h3>
 <p>The <code>source</code> of a track is the package name of the app playing the current track: <code>com.spotify.music</code>, for example. On iOS this is always <code>com.apple.music</code>.</p>
 <p>The <code>icon</code> image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding <code>color: Colors.somethingNice</code> and <code>colorBlendMode: BlendMode.srcIn</code> or similar to any <code>Image</code> widget.</p>
-<h4 id="the-progress-field">The <code>progress</code> field</h4>
+<h3 id="the-progress-field">The <code>progress</code> field</h3>
 <p>As is probably obvious, <code>progress</code> is a duration describing how far through the track the player has progressed, in milliseconds: how much of a track has been played, in other words.</p>
 <p>Note that no new track is emitted on the stream as a track progresses: stream updates only happen when the track changes state (playing to paused; vice versa; new track starts; and so on). However, the <code>progress</code> field of a track will give you an instantaneous 'correct' value every time it's polled, so to see progress updating in real time create a stateful widge to expose it:</p>
 <pre class="language-dart"><code class="language-dart">class TrackProgressIndicator extends StatefulWidget {
@@ -181,7 +181,7 @@ class _TrackProgressIndicatorState extends State&lt;TrackProgressIndicator&gt; {
   }
 }
 </code></pre>
-<h4 id="album-art-and-associated-images">Album art and associated images</h4>
+<h3 id="album-art-and-associated-images">Album art and associated images</h3>
 <p>Usually - and almost always, on Android - a track will contain an appropriate <code>ImageProvider</code> in its <code>image</code> field, containing album art or similar.</p>
 <p>On iOS, however, there is a bug or badly documented policy that means album art is only made available if the track being played is in your local library: any tracks streamed from e.g. Apple music playlists are image-free.</p>
 <p><code>NowPlaying</code> can attempt to resolve missing images for you. However, this is a relatively heavy process in terms of memory and processing, so is turned off by default. To enable missing image resolution, set the <code>resolveImages</code> parameter to <code>true</code> when starting the instance:</p>
@@ -192,7 +192,7 @@ class _TrackProgressIndicatorState extends State&lt;TrackProgressIndicator&gt; {
 <li>will only attempt to find an image if none already exists</li>
 <li>makes http calls against the <a href="https://musicbrainz.org/doc/MusicBrainz_API">MusicBrainz api</a> and subsequently the <a href="https://coverartarchive.org/">Cover Art Archive api</a></li>
 </ul>
-<h4 id="overriding-the-image-resolver">Overriding the image resolver</h4>
+<h3 id="overriding-the-image-resolver">Overriding the image resolver</h3>
 <p>You may decide that you want to resolve missing images in a different way, or even override images that have already been found from the metadata. In this case, supply a new image resolver when starting the instance:</p>
 <pre class="language-dart"><code class="language-dart">NowPlaying.instance.start(resolver: MyImageResolver());
 
@@ -205,6 +205,24 @@ class MyImageResolver implements NowPlayingImageResolver {
     }
 }
 </code></pre>
+<h3 id="semver-use">SemVer use</h3>
+<ul>
+<li>patch:
+<ul>
+<li>bugfix, tweak or typo</li>
+</ul>
+</li>
+<li>minor:
+<ul>
+<li>non-breaking change</li>
+</ul>
+</li>
+<li>major:
+<ul>
+<li>breaking change</li>
+</ul>
+</li>
+</ul>
 <h3 id="credits">Credits</h3>
 <p>Thanks to Fábio A. M. Pereira for his <a href="https://github.com/Chagall/notification-listener-service-example">Notification Listener Service Example</a>, which provided inspiration (and in some cases, let's be honest, actual code) for the Android implementation.</p>
       </section>
@@ -231,7 +249,7 @@ class MyImageResolver implements NowPlayingImageResolver {
 <footer>
   <span class="no-break">
     nowplaying
-      1.0.1
+      1.0.2
   </span>
 
 </footer>

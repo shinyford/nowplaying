@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the icon property from the NowPlayingTrack class, for the Dart programming language.">
-  <title>icon property - NowPlayingTrack class - nowplaying library - Dart API</title>
+  <meta name="description" content="API docs for the imageNeedsResolving property from the NowPlayingTrack class, for the Dart programming language.">
+  <title>imageNeedsResolving property - NowPlayingTrack class - nowplaying library - Dart API</title>
 
   
   <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400i,400,300|Source+Sans+Pro:400,300,700" rel="stylesheet">
@@ -27,9 +27,9 @@
     <li><a href="../../index.html">nowplaying</a></li>
     <li><a href="../../nowplaying/nowplaying-library.html">nowplaying</a></li>
     <li><a href="../../nowplaying/NowPlayingTrack-class.html">NowPlayingTrack</a></li>
-    <li class="self-crumb">icon property</li>
+    <li class="self-crumb">imageNeedsResolving property</li>
   </ol>
-  <div class="self-name">icon</div>
+  <div class="self-name">imageNeedsResolving</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -48,7 +48,7 @@
       <li><a href="../../index.html">nowplaying</a></li>
       <li><a href="../../nowplaying/nowplaying-library.html">nowplaying</a></li>
       <li><a href="../../nowplaying/NowPlayingTrack-class.html">NowPlayingTrack</a></li>
-      <li class="self-crumb">icon property</li>
+      <li class="self-crumb">imageNeedsResolving property</li>
     </ol>
     
     <h5>NowPlayingTrack class</h5>
@@ -102,26 +102,24 @@
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-main-content" class="col-xs-12 col-sm-9 col-md-8 main-content">
-      <div><h1><span class="kind-property">icon</span> property </h1></div>
+      <div><h1><span class="kind-property">imageNeedsResolving</span> property </h1></div>
 
 
         <section id="getter">
         
         <section class="multi-line-signature">
-          <span class="returntype"><a href="https://api.flutter.dev/flutter/painting/ImageProvider-class.html">ImageProvider</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
-                  <span class="name ">icon</span>
+          <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+                  <span class="name ">imageNeedsResolving</span>
           
 </section>
         
                 <section class="desc markdown">
-          <p>An image representing the app playing the track</p>
+          <p>true of the image is empty and a resolution hasn't been attempted, else false</p>
         </section>
                 <section class="summary source-code" id="source">
           <h2><span>Implementation</span></h2>
-          <pre class="language-dart"><code class="language-dart">ImageProvider get icon {
-  if (Platform.isIOS) return const AssetImage(&#39;assets&#47;apple_music.png&#39;, package: &#39;nowplaying&#39;);
-  return _icons[this.source];
-}</code></pre>
+          <pre class="language-dart"><code class="language-dart">bool get imageNeedsResolving =&gt;
+    _resolutionState == _NowPlayingImageResolutionState.unresolved;</code></pre>
         </section>
 </section>
         
