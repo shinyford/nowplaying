@@ -7,7 +7,7 @@
 - Fallback to duckduckgo search for image resolution
 - Change logic re: updating caller when track finshes playing
 
-## 1.0.1
+## 1.0.1
 - Meet need to know status of permissions on Android at start up, with breaking change: change `start` method return type from `void` to `Future<void>`
 
 ## 0.1.4
