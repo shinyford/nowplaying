@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:package_info/package_info.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A container for the service. Connects with the underlying OS via a method
@@ -38,7 +39,7 @@ class NowPlaying with WidgetsBindingObserver {
   Future<void> start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
-    this._resolver = resolver ?? _NowPlayingImageResolver();
+    this._resolver = resolver ?? DefaultNowPlayingImageResolver();
 
     this.track = NowPlayingTrack.notPlaying;
 
@@ -48,6 +49,9 @@ class NowPlaying with WidgetsBindingObserver {
     await _bindToWidgetsBinding();
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
     if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+
+    final info = await PackageInfo.fromPlatform();
+    print('NowPlaying is part of ${info.packageName}');
 
     await _refresh();
   }
@@ -74,7 +78,7 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
-    if (track.needsResolving) {
+    if (track.imageNeedsResolving) {
       await track._resolveImage();
       this.track = track.copy();
       _controller.add(this.track);
@@ -127,21 +131,24 @@ class NowPlaying with WidgetsBindingObserver {
     if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
   }
 
-  bool _shouldNotifyFor(NowPlayingTrack track) {
-    final positionDifferential = (track.position - this.track.position).inMilliseconds;
-    final timeDifferential = track._createdAt.difference(this.track._createdAt).inMilliseconds;
+  bool _shouldNotifyFor(NowPlayingTrack newTrack) {
+    if (newTrack.isStopped) return !this.track.isStopped;
+
+    final positionDifferential = (newTrack.position - this.track.position).inMilliseconds;
+    final timeDifferential = newTrack._createdAt.difference(this.track._createdAt).inMilliseconds;
     final positionUnexpected = positionDifferential < 0 || positionDifferential > timeDifferential + 250;
 
-    if (track.id != this.track.id || track.state != this.track.state || positionUnexpected) {
-      switch (track.state) {
+    if (newTrack.id != this.track.id || newTrack.state != this.track.state || positionUnexpected) {
+      switch (newTrack.state) {
         case NowPlayingState.playing:
           return true;
         case NowPlayingState.paused:
-          return this.track.isStopped || (this.track.isPlaying && track.id == this.track.id);
-        case NowPlayingState.stopped:
-          return track.id != this.track.id;
+          return this.track.isStopped || (this.track.isPlaying && newTrack.id == this.track.id);
+        default:
+          return false;
       }
     }
+
     return false;
   }
   // /iOS
@@ -165,6 +172,7 @@ class NowPlaying with WidgetsBindingObserver {
     } else {
       _refreshTimer?.cancel();
       _refreshTimer = null;
+      this.track = NowPlayingTrack.notPlaying;
     }
   }
 }
@@ -225,10 +233,12 @@ class NowPlayingTrack {
   bool get hasImage => image != null;
 
   /// true if the image is being resolved, else false
-  bool get isResolvingImage => _resolutionState == _NowPlayingImageResolutionState.resolving;
+  bool get isResolvingImage =>
+      _resolutionState == _NowPlayingImageResolutionState.resolving;
 
   /// true of the image is empty and a resolution hasn't been attempted, else false
-  bool get needsResolving => _resolutionState == _NowPlayingImageResolutionState.unresolved;
+  bool get imageNeedsResolving =>
+      _resolutionState == _NowPlayingImageResolutionState.unresolved;
 
   String get _imageId => '$artist:$album';
 
@@ -324,7 +334,7 @@ class NowPlayingTrack {
           '\n state: $state';
 
   Future<void> _resolveImage() async {
-    if (this.needsResolving) {
+    if (this.imageNeedsResolving) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
       final ImageProvider image = await NowPlaying.instance._resolver.resolve(this);
       if (image != null) this.image = image;
@@ -339,16 +349,19 @@ enum NowPlayingState { playing, paused, stopped }
 /// Resolve (probably) missing images for a track by returning an
 /// appropriate `ImageProvider` for it
 abstract class NowPlayingImageResolver {
+  /// Returns an `ImageProvider` for a given `NowPlayingTrack`
+  ///
+  /// If an image cannot be resolved, or does not need to be for
+  /// some reason (e.g. we're happy with the image that has already
+  /// been found in the system metadata) `resolve` should return `null`
   Future<ImageProvider> resolve(NowPlayingTrack track);
 }
 
-class _NowPlayingImageResolver implements NowPlayingImageResolver {
-  static final RegExp _rationaliseRegExp = RegExp(r'the |and |& |\(.*\)');
+class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
+  static final RegExp _rationaliseRegExp = RegExp(r' - single|the |and |& |\(.*\)');
 
   Future<ImageProvider> resolve(NowPlayingTrack track) async {
     if (track.hasImage) return null;
-    if (track.artist == null || track.album == null) return null;
-
     return _getAlbumCover(track);
   }
 
@@ -367,6 +380,7 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
+      if (release['score'] < 100) break;
       final albumArt = await _getAlbumArt(release['id']);
       if (albumArt != null) return albumArt;
     }
@@ -396,10 +410,11 @@ class _NowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<Map<String, dynamic>> _getJson(String url) async {
+    final info = await PackageInfo.fromPlatform();
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter Package/0.1.3 ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'NowPlaying Flutter 1.0.2 in ${info.packageName} ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 
@@ -443,5 +458,5 @@ class _LruMap<K, V> {
     _map.remove(key);
   }
 
-  bool containsKey(K key) => _keys.contains(key);
+  bool containsKey(K key) => _map.containsKey(key);
 }
