@@ -20,15 +20,15 @@ class NowPlaying with WidgetsBindingObserver {
   static const _channel = const MethodChannel('gomes.com.es/nowplaying');
   static const _refreshPeriod = const Duration(seconds: 1);
 
-  StreamController<NowPlayingTrack> _controller;
-  Stream<NowPlayingTrack> get stream => _controller.stream;
+  StreamController<NowPlayingTrack>? _controller;
+  Stream<NowPlayingTrack> get stream => _controller!.stream;
 
   static NowPlaying instance = NowPlaying._();
   NowPlaying._();
 
-  Timer _refreshTimer;
+  Timer? _refreshTimer;
 
-  NowPlayingImageResolver _resolver;
+  late NowPlayingImageResolver _resolver;
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
 
@@ -36,7 +36,7 @@ class NowPlaying with WidgetsBindingObserver {
   ///
   /// Initialises stream, sets up the app lifecycle observer, starts a polling
   /// timer on iOS, sets incoming method handler for Android
-  Future<void> start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
+  Future<void> start({bool resolveImages = false, NowPlayingImageResolver? resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? DefaultNowPlayingImageResolver();
@@ -44,7 +44,7 @@ class NowPlaying with WidgetsBindingObserver {
     this.track = NowPlayingTrack.notPlaying;
 
     _controller = StreamController<NowPlayingTrack>.broadcast();
-    _controller.add(NowPlayingTrack.notPlaying);
+    _controller!.add(NowPlayingTrack.notPlaying);
 
     await _bindToWidgetsBinding();
     if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
@@ -63,7 +63,7 @@ class NowPlaying with WidgetsBindingObserver {
     _controller?.close();
     _controller = null;
 
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance!.removeObserver(this);
     if (Platform.isAndroid) _channel.setMethodCallHandler(null);
     if (Platform.isIOS) {
       _refreshTimer?.cancel();
@@ -73,7 +73,7 @@ class NowPlaying with WidgetsBindingObserver {
 
   void _updateAndNotifyFor(NowPlayingTrack track) {
     if (_resolveImages) _resolveImageFor(track);
-    _controller.add(track);
+    _controller!.add(track);
     this.track = track;
   }
 
@@ -81,13 +81,13 @@ class NowPlaying with WidgetsBindingObserver {
     if (track.imageNeedsResolving) {
       await track._resolveImage();
       this.track = track.copy();
-      _controller.add(this.track);
+      _controller!.add(this.track);
     }
   }
 
   /// Returns true is the service has permission granted by the systme and user
   Future<bool> isEnabled() async =>
-      Platform.isIOS || await _channel.invokeMethod<bool>('isEnabled');
+      Platform.isIOS || await (_channel.invokeMethod<bool>('isEnabled') as FutureOr<bool>);
 
   /// Opens an OS settings page
   ///
@@ -155,7 +155,7 @@ class NowPlaying with WidgetsBindingObserver {
 
   Future<bool> _bindToWidgetsBinding() async {
     if (WidgetsBinding.instance?.isRootWidgetAttached == true) {
-      WidgetsBinding.instance.addObserver(this);
+      WidgetsBinding.instance!.addObserver(this);
       return true;
     } else {
       return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
@@ -187,16 +187,16 @@ class NowPlayingTrack {
 
   static final _essentialRegExp = RegExp(r'\(.*\)|\[.*\]');
 
-  static final _images = _LruMap<String, ImageProvider>(size: 3);
+  static final _images = _LruMap<String, ImageProvider?>(size: 3);
   static final _resolutionStates =
-      _LruMap<String, _NowPlayingImageResolutionState>(size: 3);
-  static final _icons = _LruMap<String, ImageProvider>();
+      _LruMap<String, _NowPlayingImageResolutionState?>(size: 3);
+  static final _icons = _LruMap<String?, ImageProvider>();
 
-  final String id;
-  final String title;
-  final String album;
-  final String artist;
-  final String source;
+  final String? id;
+  final String? title;
+  final String? album;
+  final String? artist;
+  final String? source;
   final Duration duration;
   final Duration position;
   final DateTime _createdAt;
@@ -214,9 +214,9 @@ class NowPlayingTrack {
     return position;
   }
 
-  String get essentialAlbum => _essential(album);
-  String get essentialTitle => _essential(title);
-  String _essential(String text) {
+  String? get essentialAlbum => _essential(album);
+  String? get essentialTitle => _essential(title);
+  String? _essential(String? text) {
     if (text == null) return null;
     final String essentialText = text.replaceAll(_essentialRegExp, '').trim();
     return essentialText.isEmpty ? text : essentialText;
@@ -224,7 +224,7 @@ class NowPlayingTrack {
 
 
   /// An image representing the app playing the track
-  ImageProvider get icon {
+  ImageProvider? get icon {
     if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
@@ -246,11 +246,11 @@ class NowPlayingTrack {
   ///
   /// A bit of sophistry here: images are stored per album rather than per
   /// track, for efficiency, and shared.
-  ImageProvider get image => _images[_imageId];
-  set image(ImageProvider image) => _images[_imageId] = image;
+  ImageProvider? get image => _images[_imageId];
+  set image(ImageProvider? image) => _images[_imageId] = image;
 
-  _NowPlayingImageResolutionState get _resolutionState => _resolutionStates[_imageId];
-  set _resolutionState(_NowPlayingImageResolutionState state) => _resolutionStates[_imageId] = state;
+  _NowPlayingImageResolutionState? get _resolutionState => _resolutionStates[_imageId];
+  set _resolutionState(_NowPlayingImageResolutionState? state) => _resolutionStates[_imageId] = state;
 
   NowPlayingTrack({
     this.id,
@@ -261,7 +261,7 @@ class NowPlayingTrack {
     this.state = NowPlayingState.stopped,
     this.source,
     this.position = Duration.zero,
-    DateTime createdAt,
+    DateTime? createdAt,
   })  : this._createdAt = createdAt ?? DateTime.now();
 
   /// Creates a track from json
@@ -270,7 +270,7 @@ class NowPlayingTrack {
   ///
   /// Creates image and icon art if not already present/resolved
   factory NowPlayingTrack.fromJson(Map<String, dynamic> json) {
-    if (json == null || json.isEmpty) return notPlaying;
+    if (json.isEmpty) return notPlaying;
 
     final state = NowPlayingState.values[json['state']];
     if (state == NowPlayingState.stopped) return notPlaying;
@@ -278,18 +278,18 @@ class NowPlayingTrack {
     final String imageId = '${json['artist']}:${json['album']}';
 
     if (!_images.containsKey(imageId)) {
-      final Uint8List imageData = json['image'];
+      final Uint8List? imageData = json['image'];
       if (imageData is Uint8List) {
         _images[imageId] = MemoryImage(imageData);
       } else {
-        final String imageUri = json['imageUri'];
+        final String? imageUri = json['imageUri'];
         if (imageUri is String) _images[imageId] = NetworkImage(imageUri);
       }
     }
 
     _resolutionStates[imageId] ??= _NowPlayingImageResolutionState.unresolved;
 
-    final Uint8List iconData = json['sourceIcon'];
+    final Uint8List? iconData = json['sourceIcon'];
     if (iconData is Uint8List) _icons[json['source']] ??= MemoryImage(iconData);
 
     final String id = json['id'].toString();
@@ -336,7 +336,7 @@ class NowPlayingTrack {
   Future<void> _resolveImage() async {
     if (this.imageNeedsResolving) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      final ImageProvider image = await NowPlaying.instance._resolver.resolve(this);
+      final ImageProvider? image = await NowPlaying.instance._resolver.resolve(this);
       if (image != null) this.image = image;
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
@@ -354,22 +354,22 @@ abstract class NowPlayingImageResolver {
   /// If an image cannot be resolved, or does not need to be for
   /// some reason (e.g. we're happy with the image that has already
   /// been found in the system metadata) `resolve` should return `null`
-  Future<ImageProvider> resolve(NowPlayingTrack track);
+  Future<ImageProvider?> resolve(NowPlayingTrack track);
 }
 
 class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
   static final RegExp _rationaliseRegExp = RegExp(r' - single|the |and |& |\(.*\)');
 
-  Future<ImageProvider> resolve(NowPlayingTrack track) async {
+  Future<ImageProvider?> resolve(NowPlayingTrack track) async {
     if (track.hasImage) return null;
     return _getAlbumCover(track);
   }
 
-  Future<ImageProvider> _getAlbumCover(NowPlayingTrack track) async {
+  Future<ImageProvider?> _getAlbumCover(NowPlayingTrack track) async {
     final String query = Uri.encodeQueryComponent(
       [
-        if (track.artist != null) 'artist:(${_rationalise(track.artist)})',
-        if (track.album != null) 'release:(${_rationalise(track.album)})',
+        if (track.artist != null) 'artist:(${_rationalise(track.artist!)})',
+        if (track.album != null) 'release:(${_rationalise(track.album!)})',
       ].join(' AND ')
     );
     if (query.isEmpty) return null;
@@ -388,28 +388,28 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
     return null;
   }
 
-  Future<ImageProvider> _getAlbumArt(String mbid) async {
+  Future<ImageProvider?> _getAlbumArt(String? mbid) async {
     print('NowPlaying - trying to find cover for $mbid');
     final json = await _getJson('https://coverartarchive.org/release/$mbid');
     if (json == null) return null;
 
-    String image;
-    String thumb;
+    String? image;
+    String? thumb;
 
     for (Map<String, dynamic> image in json['images']) {
       if (image['front'] == true) {
         final thumbs = Map<String, String>.from(image['thumbnails']);
         thumb ??= thumbs['large'];
-        image ??= image['image'];
-        if (thumb != null && image != null) break;
+        image = image['image'];
+        if (thumb != null) break;
       }
     }
 
     if (image == null && thumb == null) return null;
-    return NetworkImage(thumb ?? image);
+    return NetworkImage(thumb ?? image!);
   }
 
-  Future<Map<String, dynamic>> _getJson(String url) async {
+  Future<Map<String, dynamic>?> _getJson(String url) async {
     final info = await PackageInfo.fromPlatform();
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
