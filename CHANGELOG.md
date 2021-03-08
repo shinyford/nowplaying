@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+- Compiles for the Web platform
+
 ## 1.0.2
 - Add parent bundle id/package name to MusizBrainz UA for recognition of possible commercial app usage
 - Expose `DefaultNowPlayingImageResolver` so that it can be extended
