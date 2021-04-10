@@ -9,10 +9,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
 import 'package:path_provider/path_provider.dart';
+
+bool get isIOS => !kIsWeb && Platform.isIOS;
+bool get isAndroid => !kIsWeb && Platform.isAndroid;
 
 /// A container for the service. Connects with the underlying OS via a method
 /// channel to pull out track data.
@@ -47,8 +51,8 @@ class NowPlaying with WidgetsBindingObserver {
     _controller!.add(NowPlayingTrack.notPlaying);
 
     await _bindToWidgetsBinding();
-    if (Platform.isAndroid) _channel.setMethodCallHandler(_handler);
-    if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+    if (isAndroid) _channel.setMethodCallHandler(_handler);
+    if (isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
     final info = await PackageInfo.fromPlatform();
     print('NowPlaying is part of ${info.packageName}');
@@ -64,8 +68,8 @@ class NowPlaying with WidgetsBindingObserver {
     _controller = null;
 
     WidgetsBinding.instance!.removeObserver(this);
-    if (Platform.isAndroid) _channel.setMethodCallHandler(null);
-    if (Platform.isIOS) {
+    if (isAndroid) _channel.setMethodCallHandler(null);
+    if (isIOS) {
       _refreshTimer?.cancel();
       _refreshTimer = null;
     }
@@ -87,7 +91,7 @@ class NowPlaying with WidgetsBindingObserver {
 
   /// Returns true is the service has permission granted by the systme and user
   Future<bool> isEnabled() async =>
-      Platform.isIOS || await (_channel.invokeMethod<bool>('isEnabled') as FutureOr<bool>);
+      isIOS || await (_channel.invokeMethod<bool>('isEnabled') as FutureOr<bool>);
 
   /// Opens an OS settings page
   ///
@@ -102,7 +106,7 @@ class NowPlaying with WidgetsBindingObserver {
   ///   - permission has not been given by the user, and
   ///   - the settings screen has been opened by this app before
   Future<bool> requestPermissions({bool force = false}) async {
-    if (Platform.isIOS) return true;
+    if (isIOS) return true;
 
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/com.gomes.nowplaying');
@@ -167,7 +171,7 @@ class NowPlaying with WidgetsBindingObserver {
   /// Restart timer if resumed; else cancel it
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (Platform.isIOS) _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
+      if (isIOS) _refreshTimer ??= Timer.periodic(_refreshPeriod, _refresh);
       _refresh();
     } else {
       _refreshTimer?.cancel();
@@ -225,11 +229,11 @@ class NowPlayingTrack {
 
   /// An image representing the app playing the track
   ImageProvider? get icon {
-    if (Platform.isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
-  bool get hasIcon => Platform.isIOS || _icons.containsKey(this.source);
+  bool get hasIcon => isIOS || _icons.containsKey(this.source);
   bool get hasImage => image != null;
 
   /// true if the image is being resolved, else false
