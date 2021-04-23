@@ -1,5 +1,7 @@
 # Changelog
 
+## 2.0.1
+- 2.0.0-nullsafety.0 pushed from prerelease to full release
 ## 2.0.0-nullsafety.0
 - Updated dependencies
 - Used the dart migrate tool to migrate to nullsafety
