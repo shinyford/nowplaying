@@ -90,8 +90,9 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   /// Returns true is the service has permission granted by the systme and user
-  Future<bool> isEnabled() async =>
-      isIOS || await (_channel.invokeMethod<bool>('isEnabled') as FutureOr<bool>);
+  Future<bool> isEnabled() async {
+    return isIOS || (await _channel.invokeMethod<bool>('isEnabled') ?? false);
+  }
 
   /// Opens an OS settings page
   ///
