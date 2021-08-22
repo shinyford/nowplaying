@@ -121,7 +121,7 @@ class NowPlaying with WidgetsBindingObserver {
   // Android
   Future<dynamic> _handler(MethodCall call) async {
     if (call.method == 'track') {
-      final data = Map<String, Object>.from(call.arguments[0] ?? {});
+      final data = Map<String, Object?>.from(call.arguments[0] ?? {});
       _updateAndNotifyFor(NowPlayingTrack.fromJson(data));
     }
     return true;
@@ -131,7 +131,7 @@ class NowPlaying with WidgetsBindingObserver {
   // iOS
   Future<void> _refresh([_]) async {
     final data = await _channel.invokeMethod('track');
-    final json = Map<String, Object>.from(data);
+    final json = Map<String, Object?>.from(data);
     final track = NowPlayingTrack.fromJson(json);
     if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
   }
