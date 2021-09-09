@@ -14,7 +14,7 @@ Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
 ```
 dependencies:
-    nowplaying: ^2.0.2
+    nowplaying: ^2.0.4
 ```
 
 ### iOS

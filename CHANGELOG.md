@@ -1,9 +1,17 @@
 # Changelog
 
+## 2.0.4
+- Fix typo in README again
+
+## 2.0.3
+- Integrate fixes for poor null-safety conversion (thanks @jja08111)
+
 ## 2.0.2
 - Updated typo in README
+
 ## 2.0.1
 - 2.0.0-nullsafety.0 pushed from prerelease to full release
+
 ## 2.0.0-nullsafety.0
 - Updated dependencies
 - Used the dart migrate tool to migrate to nullsafety
