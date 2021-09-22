@@ -37,41 +37,45 @@ class _MyAppState extends State<MyApp> {
             title: const Text('NowPlaying example app'),
           ),
           body: Center(
-              child: Consumer<NowPlayingTrack>(builder: (context, track, _) {
-            if (track == null) return Container();
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (track.isStopped) Text('nothing playing'),
-                if (!track.isStopped) ...[
-                  if (track.title != null) Text(track.title),
-                  if (track.artist != null) Text(track.artist),
-                  if (track.album != null) Text(track.album),
-                  if (track.duration != null)
-                    Text(track.duration
-                        .toString()
-                        .split('.')
-                        .first
-                        .padLeft(8, '0')),
-                  TrackProgressIndicator(track),
-                  Text(track.state.toString()),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                          margin: const EdgeInsets.all(8.0),
-                          width: 200,
-                          height: 200,
-                          alignment: Alignment.center,
-                          color: Colors.grey,
-                          child: _imageFrom(track)),
-                      Positioned(bottom: 0, right: 0, child: _iconFrom(track))
-                    ],
-                  ),
-                ]
-              ],
-            );
-          })),
+            child: Consumer<NowPlayingTrack>(
+              builder: (context, track, _) {
+                if (track == null) return Container();
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (track.isStopped) Text('nothing playing'),
+                    if (!track.isStopped) ...[
+                      if (track.title != null) Text(track.title),
+                      if (track.artist != null) Text(track.artist),
+                      if (track.album != null) Text(track.album),
+                      if (track.duration != null)
+                        Text(track.duration
+                            .toString()
+                            .split('.')
+                            .first
+                            .padLeft(8, '0')),
+                      TrackProgressIndicator(track),
+                      Text(track.state.toString()),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                              margin: const EdgeInsets.all(8.0),
+                              width: 200,
+                              height: 200,
+                              alignment: Alignment.center,
+                              color: Colors.grey,
+                              child: _imageFrom(track)),
+                          Positioned(
+                              bottom: 0, right: 0, child: _iconFrom(track))
+                        ],
+                      ),
+                    ]
+                  ],
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
