@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.6
+
+- Fix typo in README again (every bloody time!)
+
 ## 2.0.5
 
 - Incorporate Provider v6.0.0

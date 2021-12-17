@@ -14,7 +14,7 @@ Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
 ```
 dependencies:
-    nowplaying: ^2.0.4
+    nowplaying: ^2.0.6
 ```
 
 ### iOS
@@ -88,6 +88,7 @@ if (!hasShownPermissions) {
     if (pleasePleasePlease) NowPlaying.instance.requestPermissions(force: true);
 }
 ```
+
 (although this still won't show the settings page if permission is already enabled.)
 
 ### Accessing current now-playing metadata
@@ -193,8 +194,9 @@ NowPlaying.instance.start(resolveImages: true);
 ```
 
 The default image resolution process:
-* will only attempt to find an image if none already exists
-* makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](https://coverartarchive.org/)
+
+- will only attempt to find an image if none already exists
+- makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](https://coverartarchive.org/)
 
 ### Overriding the image resolver
 
@@ -213,8 +215,8 @@ class MyImageResolver implements NowPlayingImageResolver {
 }
 ```
 
-
 ### SemVer use
+
 - patch:
   - bugfix, tweak or typo
 - minor:
