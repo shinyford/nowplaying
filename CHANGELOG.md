@@ -3,6 +3,7 @@
 ## 2.0.5
 
 - Incorporate Provider v6.0.0
+  - (From a PR by https://github.com/T1G3R192 which couldn't be merged directly. Thanks, Jahn E.)
 
 ## 2.0.4
 
