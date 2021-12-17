@@ -28,7 +28,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamProvider.value(
+    return StreamProvider<NowPlayingTrack>.value(
+      initialData: null,
       value: NowPlaying.instance.stream,
       child: MaterialApp(
         home: Scaffold(
