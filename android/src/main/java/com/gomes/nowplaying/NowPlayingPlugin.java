@@ -113,7 +113,7 @@ public class NowPlayingPlugin implements FlutterPlugin, MethodCallHandler, Activ
     changeBroadcastReceiver = null;
   }
 
-  private boolean isNotificationListenerServiceEnabled() {
+  private boolean isNotificationListenerServiceEnabled() {e
     final String pkgName = context.getPackageName();
     final String flat = Settings.Secure.getString(context.getContentResolver(), ENABLED_NOTIFICATION_LISTENERS);
     if (!TextUtils.isEmpty(flat)) {

@@ -55,7 +55,7 @@ class NowPlaying with WidgetsBindingObserver {
     if (isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
     final info = await PackageInfo.fromPlatform();
-    print('NowPlaying is part of ${info.packageName}');
+    debugPrint('NowPlaying is part of ${info.packageName}');
 
     await _refresh();
   }
