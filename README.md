@@ -40,6 +40,58 @@ To enable the notification listener service, add the following block to your `an
 </service>
 ```
 
+### For Android 11 or later
+
+As stated in https://developer.android.com/preview/privacy/package-visibility:
+
+> Android 11 changes how apps can query and interact with other apps
+> that the user has installed on a device. Using the new <queries>
+> element, apps can define the set of other apps that they can access.
+> This element helps encourage the principle of least privilege by
+> telling the system which other apps to make visible to your app, and
+> it helps app stores like Google Play assess the privacy and security
+> that your app provides for users.
+> 
+> If your app targets Android 11, you might need to add the <queries>
+> element in your app's manifest file. Within the <queries> element, you
+> can specify apps by package name or by intent signature.
+
+So you either have to stop what you are doing, or request to access information about certain packages, or - if you have reasons for it - use the permission [`QUERY_ALL_PACKAGES`][https://developer.android.com/reference/kotlin/android/Manifest.permission#query_all_packages].
+
+
+##### Query and interact with specific packages
+To query and interact with specific packages you would update your `AndroidManifest.xml` like this:
+
+    <manifest ...>
+        ...
+        <queries>
+            <package android:name="com.example.store" />
+            <package android:name="com.example.services" />
+        </queries>
+        ...
+         <application ...>
+        ...
+    </manifest>
+
+##### Query and interact with all apps
+I have an app that needs to be able to ask for information for all apps. All you have to do is to add the following to `AndroidManifest.xml`:
+
+    <manifest ...>
+         ...
+         <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+         ...
+         <application ...>
+         ...
+    </manifest>
+
+
+_Note: For use queries you should write the queries code **out of the application tag**, not inside the application tag_
+
+You'll also need to update the gradle version to a proper version, which supports Android 11 (if you don't have it already)  
+- https://android-developers.googleblog.com/2020/07/preparing-your-build-for-package-visibility-in-android-11.html  
+- https://stackoverflow.com/questions/62969917/how-to-fix-unexpected-element-queries-found-in-manifest-error/66851218#66851218  
+<img src="https://2.bp.blogspot.com/-dH1U0SjyHbY/Xw0ZuOVO8iI/AAAAAAAAPNc/OWZSB0ySALIsO7KimlDpMb88fRlRtITIACLcBGAsYHQ/s1600/AGP%2Btable%2Bv3.png" width="600">
+
 ## Usage
 
 ### Initialisation
