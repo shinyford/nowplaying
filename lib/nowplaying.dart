@@ -166,7 +166,7 @@ class NowPlaying with WidgetsBindingObserver {
   // /iOS
 
   Future<bool> _bindToWidgetsBinding() async {
-    await WidgetsFlutterBinding.ensureInitialized();
+    WidgetsFlutterBinding.ensureInitialized();
     if (WidgetsBinding.instance.isRootWidgetAttached == true) {
       WidgetsBinding.instance.addObserver(this);
       return true;
@@ -414,11 +414,11 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
     String? image;
     String? thumb;
 
-    for (Map<String, dynamic> image in json['images']) {
-      if (image['front'] == true) {
-        final thumbs = Map<String, String>.from(image['thumbnails']);
+    for (Map<String, dynamic> imageData in json['images']) {
+      if (imageData['front'] == true) {
+        final thumbs = Map<String, String>.from(imageData['thumbnails']);
         thumb ??= thumbs['large'];
-        image = image['image'];
+        image = imageData['image'];
         if (thumb != null) break;
       }
     }
