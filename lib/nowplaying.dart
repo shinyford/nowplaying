@@ -7,13 +7,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 bool get isIOS => !kIsWeb && Platform.isIOS;
 bool get isAndroid => !kIsWeb && Platform.isAndroid;
@@ -40,7 +40,8 @@ class NowPlaying with WidgetsBindingObserver {
   ///
   /// Initialises stream, sets up the app lifecycle observer, starts a polling
   /// timer on iOS, sets incoming method handler for Android
-  Future<void> start({bool resolveImages = false, NowPlayingImageResolver? resolver}) async {
+  Future<void> start(
+      {bool resolveImages = false, NowPlayingImageResolver? resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
     this._resolver = resolver ?? DefaultNowPlayingImageResolver();
@@ -67,7 +68,7 @@ class NowPlaying with WidgetsBindingObserver {
     _controller?.close();
     _controller = null;
 
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     if (isAndroid) _channel.setMethodCallHandler(null);
     if (isIOS) {
       _refreshTimer?.cancel();
@@ -139,16 +140,22 @@ class NowPlaying with WidgetsBindingObserver {
   bool _shouldNotifyFor(NowPlayingTrack newTrack) {
     if (newTrack.isStopped) return !this.track.isStopped;
 
-    final positionDifferential = (newTrack.position - this.track.position).inMilliseconds;
-    final timeDifferential = newTrack._createdAt.difference(this.track._createdAt).inMilliseconds;
-    final positionUnexpected = positionDifferential < 0 || positionDifferential > timeDifferential + 250;
+    final positionDifferential =
+        (newTrack.position - this.track.position).inMilliseconds;
+    final timeDifferential =
+        newTrack._createdAt.difference(this.track._createdAt).inMilliseconds;
+    final positionUnexpected = positionDifferential < 0 ||
+        positionDifferential > timeDifferential + 250;
 
-    if (newTrack.id != this.track.id || newTrack.state != this.track.state || positionUnexpected) {
+    if (newTrack.id != this.track.id ||
+        newTrack.state != this.track.state ||
+        positionUnexpected) {
       switch (newTrack.state) {
         case NowPlayingState.playing:
           return true;
         case NowPlayingState.paused:
-          return this.track.isStopped || (this.track.isPlaying && newTrack.id == this.track.id);
+          return this.track.isStopped ||
+              (this.track.isPlaying && newTrack.id == this.track.id);
         default:
           return false;
       }
@@ -159,11 +166,13 @@ class NowPlaying with WidgetsBindingObserver {
   // /iOS
 
   Future<bool> _bindToWidgetsBinding() async {
-    if (WidgetsBinding.instance?.isRootWidgetAttached == true) {
-      WidgetsBinding.instance!.addObserver(this);
+    await WidgetsFlutterBinding.ensureInitialized();
+    if (WidgetsBinding.instance.isRootWidgetAttached == true) {
+      WidgetsBinding.instance.addObserver(this);
       return true;
     } else {
-      return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
+      return Future.delayed(
+          const Duration(milliseconds: 250), _bindToWidgetsBinding);
     }
   }
 
@@ -188,7 +197,8 @@ enum _NowPlayingImageResolutionState { unresolved, resolving, resolved }
 ///
 /// Artist, album, track, duration, genre, source, progress
 class NowPlayingTrack {
-  static final NowPlayingTrack notPlaying = NowPlayingTrack();
+  static final NowPlayingTrack notPlaying = NowPlayingTrack(id: 'notplaying');
+  static final NowPlayingTrack loading = NowPlayingTrack(id: 'loading');
 
   static final _essentialRegExp = RegExp(r'\(.*\)|\[.*\]');
 
@@ -197,7 +207,7 @@ class NowPlayingTrack {
       _LruMap<String, _NowPlayingImageResolutionState?>(size: 3);
   static final _icons = _LruMap<String?, ImageProvider>();
 
-  final String? id;
+  final String id;
   final String? title;
   final String? album;
   final String? artist;
@@ -215,7 +225,8 @@ class NowPlayingTrack {
   /// If the track is not playing: how much had been played at the time the state
   /// was recorded
   Duration get progress {
-    if (state == NowPlayingState.playing) return position + DateTime.now().difference(_createdAt);
+    if (state == NowPlayingState.playing)
+      return position + DateTime.now().difference(_createdAt);
     return position;
   }
 
@@ -227,10 +238,10 @@ class NowPlayingTrack {
     return essentialText.isEmpty ? text : essentialText;
   }
 
-
   /// An image representing the app playing the track
   ImageProvider? get icon {
-    if (isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (isIOS)
+      return const AssetImage('assets/apple_music.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
@@ -254,11 +265,13 @@ class NowPlayingTrack {
   ImageProvider? get image => _images[_imageId];
   set image(ImageProvider? image) => _images[_imageId] = image;
 
-  _NowPlayingImageResolutionState? get _resolutionState => _resolutionStates[_imageId];
-  set _resolutionState(_NowPlayingImageResolutionState? state) => _resolutionStates[_imageId] = state;
+  _NowPlayingImageResolutionState? get _resolutionState =>
+      _resolutionStates[_imageId];
+  set _resolutionState(_NowPlayingImageResolutionState? state) =>
+      _resolutionStates[_imageId] = state;
 
   NowPlayingTrack({
-    this.id,
+    String? id,
     this.title,
     this.album,
     this.artist,
@@ -267,7 +280,8 @@ class NowPlayingTrack {
     this.source,
     this.position = Duration.zero,
     DateTime? createdAt,
-  })  : this._createdAt = createdAt ?? DateTime.now();
+  })  : this.id = id ?? Uuid().v4(),
+        this._createdAt = createdAt ?? DateTime.now();
 
   /// Creates a track from json
   ///
@@ -299,29 +313,27 @@ class NowPlayingTrack {
 
     final String id = json['id'].toString();
     return NowPlayingTrack(
-      id: id,
-      title: json['title'],
-      album: json['album'],
-      artist: json['artist'],
-      duration: Duration(milliseconds: json['duration'] ?? 0),
-      position: Duration(milliseconds: json['position'] ?? 0),
-      state: state,
-      source: json['source']
-    );
+        id: id,
+        title: json['title'],
+        album: json['album'],
+        artist: json['artist'],
+        duration: Duration(milliseconds: json['duration'] ?? 0),
+        position: Duration(milliseconds: json['position'] ?? 0),
+        state: state,
+        source: json['source']);
   }
 
   /// Creates a copy of a track, largely so that the stream knows it's mutated
   NowPlayingTrack copy() => NowPlayingTrack(
-    id: this.id,
-    title: this.title,
-    album: this.album,
-    artist: this.artist,
-    duration: this.duration,
-    position: this.position,
-    state: this.state,
-    source: this.source,
-    createdAt: this._createdAt
-  );
+      id: this.id,
+      title: this.title,
+      album: this.album,
+      artist: this.artist,
+      duration: this.duration,
+      position: this.position,
+      state: this.state,
+      source: this.source,
+      createdAt: this._createdAt);
 
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
@@ -341,7 +353,8 @@ class NowPlayingTrack {
   Future<void> _resolveImage() async {
     if (this.imageNeedsResolving) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      final ImageProvider? image = await NowPlaying.instance._resolver.resolve(this);
+      final ImageProvider? image =
+          await NowPlaying.instance._resolver.resolve(this);
       if (image != null) this.image = image;
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
@@ -363,7 +376,8 @@ abstract class NowPlayingImageResolver {
 }
 
 class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
-  static final RegExp _rationaliseRegExp = RegExp(r' - single|the |and |& |\(.*\)');
+  static final RegExp _rationaliseRegExp =
+      RegExp(r' - single|the |and |& |\(.*\)');
 
   Future<ImageProvider?> resolve(NowPlayingTrack track) async {
     if (track.hasImage) return null;
@@ -371,17 +385,16 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<ImageProvider?> _getAlbumCover(NowPlayingTrack track) async {
-    final String query = Uri.encodeQueryComponent(
-      [
-        if (track.artist != null) 'artist:(${_rationalise(track.artist!)})',
-        if (track.album != null) 'release:(${_rationalise(track.album!)})',
-      ].join(' AND ')
-    );
+    final String query = Uri.encodeQueryComponent([
+      if (track.artist != null) 'artist:(${_rationalise(track.artist!)})',
+      if (track.album != null) 'release:(${_rationalise(track.album!)})',
+    ].join(' AND '));
     if (query.isEmpty) return null;
 
     print('NowPlaying - image resolution query: $query');
 
-    final json = await _getJson('https://musicbrainz.org/ws/2/release?primarytype=album&limit=100&query=$query');
+    final json = await _getJson(
+        'https://musicbrainz.org/ws/2/release?primarytype=album&limit=100&query=$query');
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
@@ -419,7 +432,8 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent', 'NowPlaying Flutter 1.0.2 in ${info.packageName} ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent',
+        'NowPlaying Flutter 1.0.2 in ${info.packageName} ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 

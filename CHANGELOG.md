@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0
+
+- Upgrade to Android SDK 33
+- Improve null-safety
+
 ## 2.0.6
 
 - Fix typo in README again (every bloody time!)
