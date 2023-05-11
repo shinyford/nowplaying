@@ -127,7 +127,7 @@ timer on iOS, sets incoming method handler for Android</p>
   if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
   final info = await PackageInfo.fromPlatform();
-  print(&#39;NowPlaying is part of ${info.packageName}&#39;);
+  debugPrint(&#39;NowPlaying is part of ${info.packageName}&#39;);
 
   await _refresh();
 }</code></pre>
