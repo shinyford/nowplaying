@@ -8,16 +8,18 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
+    // ignore: deprecated_member_use
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
       return '42';
     });
   });
 
   tearDown(() {
+    // ignore: deprecated_member_use
     channel.setMockMethodCallHandler(null);
   });
 
   test('instance exists', () async {
-    expect(NowPlaying.instance == null, false);
+    expect(NowPlaying.instance.hashCode > 0, true);
   });
 }
