@@ -423,8 +423,8 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
       }
     }
 
-    if (image == null && thumb == null) return null;
-    return NetworkImage(thumb ?? image!);
+    final String? usable = thumb ?? image;
+    return usable is String ? NetworkImage(usable) : null;
   }
 
   Future<Map<String, dynamic>?> _getJson(String url) async {
