@@ -12,9 +12,9 @@ public class SwiftNowPlayingPlugin: NSObject, FlutterPlugin {
   var trackData: [String: Any?] = [:]
   let imageSize: CGSize = CGSize(width: 400, height: 400)
 
-    enum ImageError: Error {
-        case notPresent(artwork: MPMediaItemArtwork)
-    }
+  enum ImageError: Error {
+    case notPresent(artwork: MPMediaItemArtwork)
+  }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {

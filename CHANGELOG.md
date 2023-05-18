@@ -1,5 +1,9 @@
 # Changelog
 
+## -next release-
+
+- Remove unnecessary files
+
 ## 2.1.0
 
 - Upgrade to Android SDK 33
