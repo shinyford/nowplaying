@@ -10,10 +10,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  oauth2: ^2.0.1
   plugin_platform_interface: ^2.1.4
   package_info: ^2.0.0
   path_provider: ^2.0.1
+  shared_preferences: ^2.1.1
+  spotify: ^0.11.0
   uuid: ^3.0.7
+  webview_flutter: ^4.2.1
 
 dev_dependencies:
   platform: ^3.1.0
@@ -32,4 +36,4 @@ flutter:
         pluginClass: NowPlayingPlugin
 
   assets:
-    - assets/apple_music.png
+    - assets/

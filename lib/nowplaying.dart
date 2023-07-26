@@ -9,11 +9,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
+import 'package:oauth2/oauth2.dart';
 import 'package:package_info/package_info.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spotify/spotify.dart';
 import 'package:uuid/uuid.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 bool get isIOS => !kIsWeb && Platform.isIOS;
 bool get isAndroid => !kIsWeb && Platform.isAndroid;
@@ -24,17 +28,32 @@ class NowPlaying with WidgetsBindingObserver {
   static const _channel = const MethodChannel('gomes.com.es/nowplaying');
   static const _refreshPeriod = const Duration(seconds: 1);
 
-  StreamController<NowPlayingTrack>? _controller;
-  Stream<NowPlayingTrack> get stream => _controller!.stream;
+  SpotifyApi? _spotifyApi;
+
+  static const String _SPOTIFY_ACCESS_KEY = 'spotify.access.key';
+  static const String _SPOTIFY_REFRESH_KEY = 'spotify.refresh.key';
+  static const String _SPOTIFY_EXPIRATION_KEY = 'spotify.expiration.key';
+
+  static const String _redirectUri = 'https://nowplaying.gomes.com/redirect';
+  static const List<String> _scopes = const [
+    'user-read-email',
+    'user-library-read',
+    'user-read-recently-played',
+    'user-read-currently-playing'
+  ];
 
   static NowPlaying instance = NowPlaying._();
   NowPlaying._();
 
   Timer? _refreshTimer;
 
-  late NowPlayingImageResolver _resolver;
+  StreamController<NowPlayingTrack>? _controller;
+  Stream<NowPlayingTrack> get stream => _controller!.stream;
+  NowPlayingImageResolver? _resolver;
   NowPlayingTrack track = NowPlayingTrack.notPlaying;
   bool _resolveImages = false;
+  late AuthorizationCodeGrant _grant;
+  late SharedPreferences _prefs;
 
   /// Starts the service.
   ///
@@ -43,9 +62,11 @@ class NowPlaying with WidgetsBindingObserver {
   Future<void> start({bool resolveImages = false, NowPlayingImageResolver? resolver}) async {
     // async, but should not be awaited
     this._resolveImages = resolver != null || resolveImages;
-    this._resolver = resolver ?? DefaultNowPlayingImageResolver();
+    this._resolver = resolver ?? (_resolveImages ? DefaultNowPlayingImageResolver() : null);
 
     this.track = NowPlayingTrack.notPlaying;
+
+    this._prefs = await SharedPreferences.getInstance();
 
     _controller = StreamController<NowPlayingTrack>.broadcast();
     _controller!.add(NowPlayingTrack.notPlaying);
@@ -66,6 +87,8 @@ class NowPlaying with WidgetsBindingObserver {
   void stop() {
     _controller?.close();
     _controller = null;
+
+    _resolver = null;
 
     WidgetsBinding.instance.removeObserver(this);
     if (isAndroid) _channel.setMethodCallHandler(null);
@@ -90,8 +113,17 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   /// Returns true is the service has permission granted by the systme and user
-  Future<bool> isEnabled() async {
+  Future<bool> isEnabledForDeviceSources() async {
     return isIOS || (await _channel.invokeMethod<bool>('isEnabled') ?? false);
+  }
+
+  Future<bool> isEnabledForSpotify() async {
+    return false;
+  }
+
+  Future<bool> isEnabled() async {
+    final result = await Future.wait([isEnabledForDeviceSources(), isEnabledForSpotify()]);
+    return result.any((t) => t);
   }
 
   /// Opens an OS settings page
@@ -122,7 +154,8 @@ class NowPlaying with WidgetsBindingObserver {
   Future<dynamic> _handler(MethodCall call) async {
     if (call.method == 'track') {
       final data = Map<String, Object?>.from(call.arguments[0] ?? {});
-      _updateAndNotifyFor(NowPlayingTrack.fromJson(data));
+      final track = NowPlayingTrack.fromJson(data);
+      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
     }
     return true;
   }
@@ -135,6 +168,7 @@ class NowPlaying with WidgetsBindingObserver {
     final track = NowPlayingTrack.fromJson(json);
     if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
   }
+  // /iOS
 
   bool _shouldNotifyFor(NowPlayingTrack newTrack) {
     if (newTrack.isStopped) return !this.track.isStopped;
@@ -156,7 +190,6 @@ class NowPlaying with WidgetsBindingObserver {
 
     return false;
   }
-  // /iOS
 
   Future<bool> _bindToWidgetsBinding() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -180,6 +213,89 @@ class NowPlaying with WidgetsBindingObserver {
       _refreshTimer = null;
       this.track = NowPlayingTrack.notPlaying;
     }
+  }
+
+  String clientId = '';
+  String clientSecret = '';
+
+  void setSpotifyCredentials({required String clientId, required String clientSecret}) {
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+  }
+
+  bool get spotifyConnected {
+    final int expiration = _prefs.getInt(_SPOTIFY_EXPIRATION_KEY) ?? 0;
+    return expiration > DateTime.now().millisecondsSinceEpoch;
+  }
+
+  bool get spotifyUnconnected => !spotifyConnected;
+
+  Widget spotifySignInPage(context) {
+    final _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (navReq) {
+            if (navReq.url.startsWith(_redirectUri)) {
+              this._spotifyApi = SpotifyApi.fromAuthCodeGrant(this._grant, navReq.url);
+              _saveCredentials();
+              Navigator.of(context).pop();
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(_authUri);
+
+    return WebViewWidget(controller: _controller);
+  }
+
+  Future<SpotifyApi?> spotifyApi() async {
+    if (this._spotifyApi == null) {
+      final String? accessToken = _prefs.getString(_SPOTIFY_ACCESS_KEY);
+      final String? refreshToken = _prefs.getString(_SPOTIFY_REFRESH_KEY);
+      final int expiration = _prefs.getInt(_SPOTIFY_EXPIRATION_KEY) ?? 0;
+
+      if (accessToken is String && refreshToken is String && expiration > DateTime.now().millisecondsSinceEpoch) {
+        final creds = SpotifyApiCredentials(
+          this.clientId,
+          this.clientSecret,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          scopes: _scopes,
+          expiration: DateTime.fromMillisecondsSinceEpoch(expiration),
+        );
+
+        try {
+          this._spotifyApi = SpotifyApi(creds);
+        } on AuthorizationException catch (e) {
+          debugPrint(e.toString());
+          this._spotifyApi = null;
+        }
+
+        _saveCredentials();
+      }
+    }
+
+    return this._spotifyApi;
+  }
+
+  void _saveCredentials() async {
+    if (this._spotifyApi is SpotifyApi) {
+      final SpotifyApiCredentials creds = await this._spotifyApi!.getCredentials();
+      _prefs.setString(_SPOTIFY_ACCESS_KEY, creds.accessToken!);
+      _prefs.setString(_SPOTIFY_REFRESH_KEY, creds.refreshToken!);
+      _prefs.setInt(_SPOTIFY_EXPIRATION_KEY, creds.expiration!.millisecondsSinceEpoch);
+    }
+  }
+
+  Uri get _authUri {
+    this._grant = SpotifyApi.authorizationCodeGrant(
+      SpotifyApiCredentials(this.clientId, this.clientSecret),
+    );
+    return this._grant.getAuthorizationUrl(Uri.parse(_redirectUri), scopes: _scopes);
   }
 }
 
@@ -231,6 +347,7 @@ class NowPlayingTrack {
   /// An image representing the app playing the track
   ImageProvider? get icon {
     if (isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (source == 'com.acmeandroid.listen') return const AssetImage('assets/listenapp.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
@@ -337,9 +454,9 @@ class NowPlayingTrack {
           '\n state: $state';
 
   Future<void> _resolveImage() async {
-    if (this.imageNeedsResolving) {
+    if (imageNeedsResolving && !hasImage) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      final ImageProvider? image = await NowPlaying.instance._resolver.resolve(this);
+      final ImageProvider? image = await NowPlaying.instance._resolver?.resolve(this);
       if (image != null) this.image = image;
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
@@ -361,21 +478,89 @@ abstract class NowPlayingImageResolver {
 }
 
 class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
+  final spotifyImageResolver = SpotifyImageResolver();
+  final nativeImageResolver = NativeImageResolver();
+
+  Future<ImageProvider?> resolve(NowPlayingTrack track) async {
+    final provider = await spotifyImageResolver.resolve(track);
+    if (provider is ImageProvider) return provider;
+    return nativeImageResolver.resolve(track);
+  }
+}
+
+class SpotifyImageResolver implements NowPlayingImageResolver {
+  static const int _BATCH_SIZE = 50;
+
+  Future<ImageProvider?> resolve(NowPlayingTrack track) async {
+    if (track.hasImage) return null;
+    if (NowPlaying.instance.spotifyUnconnected) return null;
+
+    final album = await _findAlbumFor(track);
+    if (album is AlbumSimple) {
+      final url = album.images!.first.url!;
+      debugPrint('Found image using Spotify image resolver: $url');
+      return NetworkImage(url);
+    }
+
+    return null;
+  }
+
+  Future<AlbumSimple?> _findAlbumFor(NowPlayingTrack track) async {
+    if (track.album is! String || track.artist is! String) return null;
+
+    final title = _rationalise(track.album);
+    final artist = _rationalise(track.artist);
+    final api = await NowPlaying.instance.spotifyApi();
+    return _search(artist, title, api);
+  }
+
+  Future<AlbumSimple?> _search(String artist, String title, SpotifyApi? api, [final int offset = 0]) async {
+    if (api is SpotifyApi) {
+      final searchTerm = 'remaster album:"$title" artist:"$artist"'.replaceAll(' ', '%2520');
+      final search = await api.search.get(searchTerm, types: [SearchType.album]).getPage(_BATCH_SIZE, offset);
+      for (final searchItem in search) {
+        for (final item in searchItem.items!) {
+          if (_isAlbumWithArt(item, artist: artist, title: title)) return item as AlbumSimple;
+        }
+      }
+      if (search.length == _BATCH_SIZE) return _search(artist, title, api, offset + _BATCH_SIZE);
+    }
+    return null;
+  }
+
+  bool _isAlbumWithArt(dynamic album, {required String title, required String artist}) =>
+      album is AlbumSimple &&
+      album.images?.isNotEmpty == true &&
+      _rationalise(album.name) == title &&
+      album.artists?.any((a) => _rationalise(a.name) == artist) == true;
+
+  static final _removeDisallowedCharacters = RegExp(r'\[.*?\]|\(.*?\)|[^a-z0-9 ]');
+  static final _removeMultipleWhitespace = RegExp(r'\s+');
+
+  String _rationalise(String? text) {
+    if (text is! String) return '';
+    return text
+        .toLowerCase()
+        .replaceAll(' & ', ' and ')
+        .replaceAll(_removeDisallowedCharacters, '')
+        .replaceAll(_removeMultipleWhitespace, ' ')
+        .trim();
+  }
+}
+
+class NativeImageResolver implements NowPlayingImageResolver {
   static final RegExp _rationaliseRegExp = RegExp(r' - single|the |and |& |\(.*\)');
 
   Future<ImageProvider?> resolve(NowPlayingTrack track) async {
     if (track.hasImage) return null;
-    return _getAlbumCover(track);
-  }
 
-  Future<ImageProvider?> _getAlbumCover(NowPlayingTrack track) async {
     final String query = Uri.encodeQueryComponent([
       if (track.artist != null) 'artist:(${_rationalise(track.artist!)})',
       if (track.album != null) 'release:(${_rationalise(track.album!)})',
     ].join(' AND '));
     if (query.isEmpty) return null;
 
-    print('NowPlaying - image resolution query: $query');
+    debugPrint('NowPlaying - image resolution query: $query');
 
     final json = await _getJson('https://musicbrainz.org/ws/2/release?primarytype=album&limit=100&query=$query');
     if (json == null) return null;
@@ -390,7 +575,7 @@ class DefaultNowPlayingImageResolver implements NowPlayingImageResolver {
   }
 
   Future<ImageProvider?> _getAlbumArt(String? mbid) async {
-    print('NowPlaying - trying to find cover for $mbid');
+    debugPrint('NowPlaying - trying to find cover for $mbid');
     final json = await _getJson('https://coverartarchive.org/release/$mbid');
     if (json == null) return null;
 
