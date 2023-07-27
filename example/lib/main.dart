@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:nowplaying/nowplaying.dart';
+import 'package:nowplaying/nowplaying_track.dart';
 import 'package:provider/provider.dart';
 
 void main() {
