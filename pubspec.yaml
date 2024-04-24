@@ -1,23 +1,23 @@
 name: nowplaying
 description: A plugin to reveal metadata for the currently playing audio track
 repository: https://github.com/shinyford/nowplaying
-version: 2.1.0
+version: 3.0.0
 
 environment:
-  sdk: ">=2.12.0 <4.0.0"
-  flutter: ">=1.12.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   oauth2: ^2.0.1
-  plugin_platform_interface: ^2.1.4
   package_info: ^2.0.0
   path_provider: ^2.0.1
+  plugin_platform_interface: ^2.1.4
+  provider: ^6.1.2
   shared_preferences: ^2.1.1
-  spotify: ^0.11.0
-  uuid: ^3.0.7
-  webview_flutter: ^4.2.1
+  spotify: ^0.13.3
+  uuid: ^4.2.2
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   platform: ^3.1.0

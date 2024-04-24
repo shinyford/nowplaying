@@ -1,8 +1,8 @@
 # Changelog
 
-## -next release-
+## 3.0.0
 
-- Remove unnecessary files
+- Add Spotify support
 
 ## 2.1.0
 

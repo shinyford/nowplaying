@@ -20,22 +20,23 @@ class NativeImageResolver implements NowPlayingImageResolver {
     ].join(' AND '));
     if (query.isEmpty) return null;
 
-    debugPrint('NowPlaying - image resolution query: $query');
+    print('NowPlaying - image resolution query: $query');
 
     final json = await _getJson('https://musicbrainz.org/ws/2/release?primarytype=album&limit=100&query=$query');
     if (json == null) return null;
 
     for (Map<String, dynamic> release in json['releases']) {
-      if (release['score'] < 100) break;
-      final albumArt = await _getAlbumArt(release['id']);
-      if (albumArt != null) return albumArt;
+      if (release['score'] as int >= 100) {
+        final albumArt = await _getAlbumArt(release['id']);
+        if (albumArt != null) return albumArt;
+      }
     }
 
     return null;
   }
 
   Future<ImageProvider?> _getAlbumArt(String? mbid) async {
-    debugPrint('NowPlaying - trying to find cover for $mbid');
+    print('NowPlaying - trying to find cover for $mbid');
     final json = await _getJson('https://coverartarchive.org/release/$mbid');
     if (json == null) return null;
 
@@ -60,8 +61,7 @@ class NativeImageResolver implements NowPlayingImageResolver {
     final client = HttpClient();
     final req = await client.openUrl('GET', Uri.parse(url));
     req.headers.add('Accept', 'application/json');
-    req.headers.add('User-Agent',
-        'Flutter NowPlaying ${info.version} in ${info.packageName} ( nicsford+NowPlayingFlutter@gmail.com )');
+    req.headers.add('User-Agent', 'Flutter NowPlaying ${info.version} in ${info.packageName} ( nicsford+NowPlayingFlutter@gmail.com )');
     final resp = await req.close();
     if (resp.statusCode != 200) return null;
 

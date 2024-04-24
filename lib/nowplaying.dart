@@ -27,8 +27,8 @@ enum NowPlayingState { playing, paused, stopped }
 /// A container for the service. Connects with the underlying OS via a method
 /// channel to pull out track data.
 class NowPlaying with WidgetsBindingObserver {
-  static const _channel = const MethodChannel('gomes.com.es/nowplaying');
-  static const _refreshPeriod = const Duration(seconds: 1);
+  static const _channel = MethodChannel('gomes.com.es/nowplaying');
+  static const _refreshPeriod = Duration(seconds: 1);
 
   static NowPlaying instance = NowPlaying._();
   NowPlaying._();
@@ -36,37 +36,62 @@ class NowPlaying with WidgetsBindingObserver {
   Timer? _refreshTimer;
 
   NowPlayingImageResolver? resolver;
-  NowPlayingTrack track = NowPlayingTrack.notPlaying;
+  SpotifyTrack? _spotifyTrack;
+  NowPlayingTrack? _deviceTrack;
+  NowPlayingTrack get track {
+    if (_deviceTrack?.isPlaying == true) return _deviceTrack!;
+    if (_spotifyTrack is SpotifyTrack) return _spotifyTrack!;
+    if (_deviceTrack is NowPlayingTrack) return _deviceTrack!;
+    return NowPlayingTrack.notPlaying;
+  }
+
+  set track(NowPlayingTrack? track) {
+    if (track == null) {
+      _spotifyTrack = _deviceTrack = null;
+    } else if (track.isSpotifyTrack) {
+      _spotifyTrack = track as SpotifyTrack;
+    } else {
+      _deviceTrack = track;
+    }
+  }
 
   static NowplayingSpotifyController spotify = NowplayingSpotifyController();
 
-  StreamController<NowPlayingTrack>? _controller;
-  Stream<NowPlayingTrack> get stream => _controller!.stream;
+  late StreamController<NowPlayingTrack> _controller;
+  Stream<NowPlayingTrack> get stream => _controller.stream;
   bool _resolveImages = false;
 
   /// Starts the service.
   ///
   /// Initialises stream, sets up the app lifecycle observer, starts a polling
   /// timer on iOS, sets incoming method handler for Android
-  Future<void> start({bool resolveImages = false, NowPlayingImageResolver? resolver}) async {
-    // async, but should not be awaited
+  Future<void> start({
+    bool resolveImages = false,
+    NowPlayingImageResolver? resolver,
+    String? spotifyClientId,
+    String? spotifyClientSecret,
+  }) async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    _spotifyTrack = _deviceTrack = null;
+    _controller = StreamController<NowPlayingTrack>.broadcast();
+    _controller.add(track);
+
     this._resolveImages = resolver != null || resolveImages;
     this.resolver = resolver ?? (_resolveImages ? DefaultNowPlayingImageResolver() : null);
 
-    this.track = NowPlayingTrack.notPlaying;
-
     final prefs = await SharedPreferences.getInstance();
     NowPlaying.spotify.setPrefs(prefs);
+    if (spotifyClientId is String && spotifyClientSecret is String) {
+      NowPlaying.spotify.setCredentials(clientId: spotifyClientId, clientSecret: spotifyClientSecret);
+    }
 
-    _controller = StreamController<NowPlayingTrack>.broadcast();
-    _controller!.add(NowPlayingTrack.notPlaying);
-
-    await _bindToWidgetsBinding();
+    _bindToWidgetsBinding();
     if (isAndroid) _channel.setMethodCallHandler(_handler);
-    if (isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
+    _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
     final info = await PackageInfo.fromPlatform();
-    debugPrint('NowPlaying ${info.version} is part of ${info.packageName}');
+    print('NowPlaying ${info.version} is part of ${info.packageName}');
 
     await _refresh();
   }
@@ -75,45 +100,32 @@ class NowPlaying with WidgetsBindingObserver {
   ///
   /// Kills stream, timer and method call handler
   void stop() {
-    _controller?.close();
-    _controller = null;
+    _controller.close();
 
     resolver = null;
 
     WidgetsBinding.instance.removeObserver(this);
     if (isAndroid) _channel.setMethodCallHandler(null);
-    if (isIOS) {
-      _refreshTimer?.cancel();
-      _refreshTimer = null;
-    }
+
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
   }
 
   void _updateAndNotifyFor(NowPlayingTrack track) {
-    if (_resolveImages) _resolveImageFor(track);
-    _controller!.add(track);
+    if (_resolveImages && track.imageNeedsResolving) _resolveImageFor(track);
+    _controller.add(track);
     this.track = track;
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
-    if (track.imageNeedsResolving) {
-      await track.resolveImage();
-      this.track = track.copy();
-      _controller!.add(this.track);
-    }
+    await track.resolveImage();
+    this.track = track.copy();
+    _controller.add(this.track);
   }
 
   /// Returns true is the service has permission granted by the systme and user
-  Future<bool> isEnabledForDeviceSources() async {
-    return isIOS || (await _channel.invokeMethod<bool>('isEnabled') ?? false);
-  }
-
-  Future<bool> isEnabledForSpotify() async {
-    return false;
-  }
-
   Future<bool> isEnabled() async {
-    final result = await Future.wait([isEnabledForDeviceSources(), isEnabledForSpotify()]);
-    return result.any((t) => t);
+    return isIOS || (await _channel.invokeMethod<bool>('isEnabled') ?? false);
   }
 
   /// Opens an OS settings page
@@ -151,34 +163,23 @@ class NowPlaying with WidgetsBindingObserver {
   }
   // /Android
 
-  // iOS
   Future<void> _refresh([_]) async {
-    final data = await _channel.invokeMethod('track');
-    final json = Map<String, Object?>.from(data);
-    final track = NowPlayingTrack.fromJson(json);
-    if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
-  }
-  // /iOS
-
-  bool _shouldNotifyFor(NowPlayingTrack newTrack) {
-    if (newTrack.isStopped) return !this.track.isStopped;
-
-    final positionDifferential = (newTrack.position - this.track.position).inMilliseconds;
-    final timeDifferential = newTrack.createdAt.difference(this.track.createdAt).inMilliseconds;
-    final positionUnexpected = positionDifferential < 0 || positionDifferential > timeDifferential + 250;
-
-    if (newTrack.id != this.track.id || newTrack.state != this.track.state || positionUnexpected) {
-      switch (newTrack.state) {
-        case NowPlayingState.playing:
-          return true;
-        case NowPlayingState.paused:
-          return this.track.isStopped || (this.track.isPlaying && newTrack.id == this.track.id);
-        default:
-          return false;
-      }
+    if (NowPlaying.spotify.isConnected) {
+      final track = await NowPlaying.spotify.currentTrack();
+      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
     }
 
-    return false;
+    if (isIOS) {
+      final data = await _channel.invokeMethod('track');
+      final json = Map<String, Object?>.from(data);
+      final track = NowPlayingTrack.fromJson(json);
+      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
+    }
+  }
+
+  bool _shouldNotifyFor(NowPlayingTrack newTrack) {
+    if (newTrack.isSpotifyNotification && this.track is SpotifyTrack) return false;
+    return newTrack.isPlaying || !this.track.isPlaying;
   }
 
   Future<bool> _bindToWidgetsBinding() async {

@@ -52,18 +52,21 @@ class NowPlayingTrack {
 
   /// An image representing the app playing the track
   ImageProvider? get icon {
-    if (isIOS) return const AssetImage('assets/apple_music.png', package: 'nowplaying');
+    if (isIOS) return const AssetImage('assets/applemusic.png', package: 'nowplaying');
     if (source == 'com.acmeandroid.listen') return const AssetImage('assets/listenapp.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
+  bool get isSpotifyNotification => source == 'com.spotify.music';
   bool get hasIcon => isIOS || _icons.containsKey(this.source);
   bool get hasImage => image != null;
+
+  final isSpotifyTrack = false;
 
   /// true if the image is being resolved, else false
   bool get isResolvingImage => _resolutionState == _NowPlayingImageResolutionState.resolving;
 
-  /// true of the image is empty and a resolution hasn't been attempted, else false
+  /// true if the image is empty and a resolution hasn't been attempted, else false
   bool get imageNeedsResolving => _resolutionState == _NowPlayingImageResolutionState.unresolved;
 
   String get _imageId => '$artist:$album';
@@ -110,7 +113,9 @@ class NowPlayingTrack {
         _images[imageId] = MemoryImage(imageData);
       } else {
         final String? imageUri = json['imageUri'];
-        if (imageUri is String) _images[imageId] = NetworkImage(imageUri);
+        if (imageUri?.startsWith('https://') == true) {
+          _images[imageId] = NetworkImage(imageUri!);
+        }
       }
     }
 
@@ -151,19 +156,18 @@ class NowPlayingTrack {
   String toString() => isStopped
       ? 'NowPlaying: -silence-'
       : 'NowPlaying:'
-          '\n title: $title'
-          '\n artist: $artist'
-          '\n album: $album'
-          '\n duration: ${duration.inMilliseconds}ms'
-          '\n position: ${position.inMilliseconds}ms'
-          '\n has image: $hasImage'
-          '\n state: $state';
+          'title: $title; '
+          'artist: $artist; '
+          'album: $album; '
+          'duration: ${duration.inMilliseconds}ms; '
+          'position: ${position.inMilliseconds}ms; '
+          'has image: $hasImage; '
+          'state: $state';
 
   Future<void> resolveImage() async {
     if (imageNeedsResolving && !hasImage) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      final ImageProvider? image = await NowPlaying.instance.resolver?.resolve(this);
-      if (image != null) this.image = image;
+      this.image = await NowPlaying.instance.resolver?.resolve(this);
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
   }

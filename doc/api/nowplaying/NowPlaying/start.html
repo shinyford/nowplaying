@@ -7,7 +7,7 @@
   <meta name="description" content="API docs for the start method from the NowPlaying class, for the Dart programming language.">
   <title>start method - NowPlaying class - nowplaying library - Dart API</title>
 
-  
+
   <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400i,400,300|Source+Sans+Pro:400,300,700" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="../../static-assets/github.css">
@@ -43,18 +43,18 @@
         <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
       </form>
     </header>
-    
+
     <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
       <li><a href="../../index.html">nowplaying</a></li>
       <li><a href="../../nowplaying/nowplaying-library.html">nowplaying</a></li>
       <li><a href="../../nowplaying/NowPlaying-class.html">NowPlaying</a></li>
       <li class="self-crumb">start method</li>
     </ol>
-    
+
     <h5>NowPlaying class</h5>
     <ol>
-    
-    
+
+
         <li class="section-title">
             <a href="../../nowplaying/NowPlaying-class.html#instance-properties">Properties</a>
         </li>
@@ -62,7 +62,7 @@
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></li>
         <li><a href="../../nowplaying/NowPlaying/stream.html">stream</a></li>
         <li><a href="../../nowplaying/NowPlaying/track.html">track</a></li>
-    
+
         <li class="section-title"><a href="../../nowplaying/NowPlaying-class.html#instance-methods">Methods</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/widgets/WidgetsBindingObserver/didChangeAccessibilityFeatures.html">didChangeAccessibilityFeatures</a></li>
         <li><a href="../../nowplaying/NowPlaying/didChangeAppLifecycleState.html">didChangeAppLifecycleState</a></li>
@@ -80,16 +80,16 @@
         <li><a href="../../nowplaying/NowPlaying/start.html">start</a></li>
         <li><a href="../../nowplaying/NowPlaying/stop.html">stop</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></li>
-    
+
         <li class="section-title inherited"><a href="../../nowplaying/NowPlaying-class.html#operators">Operators</a></li>
         <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></li>
-    
+
         <li class="section-title"><a href="../../nowplaying/NowPlaying-class.html#static-properties">Static properties</a></li>
         <li><a href="../../nowplaying/NowPlaying/instance.html">instance</a></li>
-    
-    
-    
-    
+
+
+
+
     </ol>
   </div><!--/.sidebar-offcanvas-->
 
@@ -102,14 +102,14 @@
 (<wbr><ol class="parameter-list"><li><span class="parameter" id="start-param-resolveImages">{<span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">resolveImages</span>: <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="start-param-resolver"><span class="type-annotation"><a href="../../nowplaying/NowPlayingImageResolver-class.html">NowPlayingImageResolver</a></span> <span class="parameter-name">resolver</span>}</span></li>
 </ol>)
-      
+
     </section>
     <section class="desc markdown">
       <p>Starts the service.</p>
 <p>Initialises stream, sets up the app lifecycle observer, starts a polling
 timer on iOS, sets incoming method handler for Android</p>
     </section>
-    
+
     <section class="summary source-code" id="source">
       <h2><span>Implementation</span></h2>
       <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; start({bool resolveImages = false, NowPlayingImageResolver resolver}) async {
@@ -127,7 +127,7 @@ timer on iOS, sets incoming method handler for Android</p>
   if (Platform.isIOS) _refreshTimer = Timer.periodic(_refreshPeriod, _refresh);
 
   final info = await PackageInfo.fromPlatform();
-  debugPrint(&#39;NowPlaying is part of ${info.packageName}&#39;);
+  print(&#39;NowPlaying is part of ${info.packageName}&#39;);
 
   await _refresh();
 }</code></pre>

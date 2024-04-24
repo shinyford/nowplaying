@@ -6,7 +6,11 @@ audio track on the device.
 On Android `nowplaying` makes use of the `NotifiationListenerService`, and shows any
 track revealing its play state via a notification.
 
-On iOS `nowplaying` is restricted to access to music or media played via the Apple Music/iTunes app.
+On iOS `nowplaying` is restricted to access to music or media played via the Apple Music/iTunes app,
+or via Spotify.
+
+Access to Spotify track listings is dependent on the user signing in to Spotify and authorising
+the app for its use.
 
 ## Installation
 
@@ -14,7 +18,7 @@ Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
 ```
 dependencies:
-    nowplaying: ^2.1.0
+    nowplaying: ^3.0.0
 ```
 
 ### iOS
@@ -76,7 +80,7 @@ To query and interact with specific packages you would update your `AndroidManif
 
 ##### Query and interact with all apps
 
-I have an app that needs to be able to ask for information for all apps. All you have to do is to add the following to `AndroidManifest.xml`:
+Have an app that needs to be able to ask for information for all apps? Add the following to `AndroidManifest.xml`:
 
     <manifest ...>
          ...
@@ -91,7 +95,7 @@ _Note: For use queries you should write the queries code **out of the applicatio
 You'll also need to update the gradle version to a proper version, which supports Android 11 (if you don't have it already)
 
 - https://android-developers.googleblog.com/2020/07/preparing-your-build-for-package-visibility-in-android-11.html
-- https://stackoverflow.com/questions/62969917/how-to-fix-unexpected-element-queries-found-in-manifest-error/66851218#66851218  
+- https://stackoverflow.com/questions/62969917/how-to-fix-unexpected-element-queries-found-in-manifest-error/66851218#66851218
   <img src="https://2.bp.blogspot.com/-dH1U0SjyHbY/Xw0ZuOVO8iI/AAAAAAAAPNc/OWZSB0ySALIsO7KimlDpMb88fRlRtITIACLcBGAsYHQ/s1600/AGP%2Btable%2Bv3.png" width="600">
 
 ## Usage
@@ -101,7 +105,7 @@ You'll also need to update the gradle version to a proper version, which support
 Initialise the `nowplaying` service by starting it's instance:
 
 ```dart
-NowPlaying.instance.start();
+await NowPlaying.instance.start();
 ```
 
 This can be done anywhere, including prior to the `runApp` command.
@@ -144,6 +148,32 @@ if (!hasShownPermissions) {
 ```
 
 (although this still won't show the settings page if permission is already enabled.)
+
+### Spotify
+
+Access to spotify requires a client ID and client secret, available from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+Once you have these credentials, pass them into the NowPlaying `start` function:
+
+```dart
+  await NowPlaying.instance.start(
+    ...,
+    spotifyClientId: '<CLIENT ID>',
+    spotifyClientSecret: '<CLIENT SECRET>',
+    ...
+  );
+```
+
+Once credentials have been provided, you need to connect to spotify:
+
+```dart
+if (NowPlaying.spotify.isEnabled && NowPlaying.spotify.isUnconnected) {
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => NowPlaying.spotify.signInPage(context)),
+  );
+}
+```
+
+If required, this will bring up a Spotify sign-in page in a webview.
 
 ### Accessing current now-playing metadata
 
@@ -193,7 +223,7 @@ enum NowPlayingState {
 
 ### `icon` and `source` fields
 
-The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music`.
+The `source` of a track is the package name of the app playing the current track: `com.spotify.music`, for example. On iOS this is always `com.apple.music` or 'Spotify'
 
 The `icon` image provider, if not null, supplies a small, transparent PNG containing a monochrome logo for the originating app. While monochrome, this PNG is not necessarily black: so for consistency, it's probably worth adding `color: Colors.somethingNice` and `colorBlendMode: BlendMode.srcIn` or similar to any `Image` widget.
 
@@ -244,12 +274,13 @@ On iOS, however, there is a bug or badly documented policy that means album art 
 `NowPlaying` can attempt to resolve missing images for you. However, this is a relatively heavy process in terms of memory and processing, so is turned off by default. To enable missing image resolution, set the `resolveImages` parameter to `true` when starting the instance:
 
 ```dart
-NowPlaying.instance.start(resolveImages: true);
+await NowPlaying.instance.start(..., resolveImages: true, ...);
 ```
 
 The default image resolution process:
 
 - will only attempt to find an image if none already exists
+- access the Spotify api for image data if signed in, or
 - makes http calls against the [MusicBrainz api](https://musicbrainz.org/doc/MusicBrainz_API) and subsequently the [Cover Art Archive api](https://coverartarchive.org/)
 
 ### Overriding the image resolver
@@ -257,7 +288,7 @@ The default image resolution process:
 You may decide that you want to resolve missing images in a different way, or even override images that have already been found from the metadata. In this case, supply a new image resolver when starting the instance:
 
 ```dart
-NowPlaying.instance.start(resolver: MyImageResolver());
+await NowPlaying.instance.start(..., resolver: MyImageResolver(), ...);
 
 ...
 

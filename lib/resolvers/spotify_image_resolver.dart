@@ -15,33 +15,35 @@ class SpotifyImageResolver implements NowPlayingImageResolver {
     final album = await _findAlbumFor(track);
     if (album is AlbumSimple) {
       final url = album.images!.first.url!;
-      debugPrint('Found image using Spotify image resolver: $url');
+      print('Found image using Spotify image resolver: $url');
       return NetworkImage(url);
     }
 
+    print('No image found by Spotify');
     return null;
   }
 
   Future<AlbumSimple?> _findAlbumFor(NowPlayingTrack track) async {
     if (track.album is! String || track.artist is! String) return null;
 
-    final title = _rationalise(track.album);
-    final artist = _rationalise(track.artist);
     final api = await NowPlaying.spotify.api();
-    return _search(artist, title, api);
+    if (api is SpotifyApi) {
+      final title = _rationalise(track.album);
+      final artist = _rationalise(track.artist);
+      return _search(artist, title, api);
+    }
+    return null;
   }
 
-  Future<AlbumSimple?> _search(String artist, String title, SpotifyApi? api, [final int offset = 0]) async {
-    if (api is SpotifyApi) {
-      final searchTerm = 'remaster album:"$title" artist:"$artist"'.replaceAll(' ', '%2520');
-      final search = await api.search.get(searchTerm, types: [SearchType.album]).getPage(_BATCH_SIZE, offset);
-      for (final searchItem in search) {
-        for (final item in searchItem.items!) {
-          if (_isAlbumWithArt(item, artist: artist, title: title)) return item as AlbumSimple;
-        }
+  Future<AlbumSimple?> _search(String artist, String title, SpotifyApi api, [final int offset = 0]) async {
+    final searchTerm = 'remaster album:"$title" artist:"$artist"'.replaceAll(' ', '%2520');
+    final search = await api.search.get(searchTerm, types: [SearchType.album]).getPage(_BATCH_SIZE, offset);
+    for (final searchItem in search) {
+      for (final item in searchItem.items!) {
+        if (_isAlbumWithArt(item, artist: artist, title: title)) return item as AlbumSimple;
       }
-      if (search.length == _BATCH_SIZE) return _search(artist, title, api, offset + _BATCH_SIZE);
     }
+    if (search.length == _BATCH_SIZE) return _search(artist, title, api, offset + _BATCH_SIZE);
     return null;
   }
 
@@ -56,11 +58,6 @@ class SpotifyImageResolver implements NowPlayingImageResolver {
 
   String _rationalise(String? text) {
     if (text is! String) return '';
-    return text
-        .toLowerCase()
-        .replaceAll(' & ', ' and ')
-        .replaceAll(_removeDisallowedCharacters, '')
-        .replaceAll(_removeMultipleWhitespace, ' ')
-        .trim();
+    return text.toLowerCase().replaceAll(' & ', ' and ').replaceAll(_removeDisallowedCharacters, '').replaceAll(_removeMultipleWhitespace, ' ').trim();
   }
 }
