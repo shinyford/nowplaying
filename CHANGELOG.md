@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1
+
+- Simplify track object
+- Improve choice of spotify vs native track display
+- Add Spotify controller documentation
+
 ## 3.0.0
 
 - Add Spotify support

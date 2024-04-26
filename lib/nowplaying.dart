@@ -36,24 +36,9 @@ class NowPlaying with WidgetsBindingObserver {
   Timer? _refreshTimer;
 
   NowPlayingImageResolver? resolver;
-  SpotifyTrack? _spotifyTrack;
-  NowPlayingTrack? _deviceTrack;
-  NowPlayingTrack get track {
-    if (_deviceTrack?.isPlaying == true) return _deviceTrack!;
-    if (_spotifyTrack is SpotifyTrack) return _spotifyTrack!;
-    if (_deviceTrack is NowPlayingTrack) return _deviceTrack!;
-    return NowPlayingTrack.notPlaying;
-  }
 
-  set track(NowPlayingTrack? track) {
-    if (track == null) {
-      _spotifyTrack = _deviceTrack = null;
-    } else if (track.isSpotifyTrack) {
-      _spotifyTrack = track as SpotifyTrack;
-    } else {
-      _deviceTrack = track;
-    }
-  }
+  NowPlayingTrack _androidTrack = NowPlayingTrack.notPlaying;
+  NowPlayingTrack track = NowPlayingTrack.notPlaying;
 
   static NowplayingSpotifyController spotify = NowplayingSpotifyController();
 
@@ -73,17 +58,18 @@ class NowPlaying with WidgetsBindingObserver {
   }) async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    _spotifyTrack = _deviceTrack = null;
     _controller = StreamController<NowPlayingTrack>.broadcast();
     _controller.add(track);
 
     this._resolveImages = resolver != null || resolveImages;
-    this.resolver = resolver ?? (_resolveImages ? DefaultNowPlayingImageResolver() : null);
+    this.resolver =
+        resolver ?? (_resolveImages ? DefaultNowPlayingImageResolver() : null);
 
     final prefs = await SharedPreferences.getInstance();
     NowPlaying.spotify.setPrefs(prefs);
     if (spotifyClientId is String && spotifyClientSecret is String) {
-      NowPlaying.spotify.setCredentials(clientId: spotifyClientId, clientSecret: spotifyClientSecret);
+      NowPlaying.spotify.setCredentials(
+          clientId: spotifyClientId, clientSecret: spotifyClientSecret);
     }
 
     _bindToWidgetsBinding();
@@ -156,30 +142,45 @@ class NowPlaying with WidgetsBindingObserver {
   Future<dynamic> _handler(MethodCall call) async {
     if (call.method == 'track') {
       final data = Map<String, Object?>.from(call.arguments[0] ?? {});
-      final track = NowPlayingTrack.fromJson(data);
-      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
+      _androidTrack = NowPlayingTrack.fromJson(data);
     }
     return true;
   }
   // /Android
 
-  Future<void> _refresh([_]) async {
-    if (NowPlaying.spotify.isConnected) {
-      final track = await NowPlaying.spotify.currentTrack();
-      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
-    }
+  Future<NowPlayingTrack> _getCurrentSpotifyTrack() async {
+    final track = await NowPlaying.spotify.currentTrack();
+    if (_shouldNotifyFor(track)) return track;
+    return NowPlayingTrack.notPlaying;
+  }
 
+  Future<NowPlayingTrack> _getCurrentDeviceTrack() async {
     if (isIOS) {
       final data = await _channel.invokeMethod('track');
       final json = Map<String, Object?>.from(data);
       final track = NowPlayingTrack.fromJson(json);
-      if (_shouldNotifyFor(track)) _updateAndNotifyFor(track);
+      if (_shouldNotifyFor(track)) return track;
     }
+
+    if (isAndroid && _shouldNotifyFor(_androidTrack)) return _androidTrack;
+
+    return NowPlayingTrack.notPlaying;
+  }
+
+  Future<void> _refresh([_]) async {
+    final [spotifyTrack, deviceTrack] = await Future.wait([
+      _getCurrentSpotifyTrack(),
+      _getCurrentDeviceTrack(),
+    ]);
+
+    if (spotifyTrack.isNotPlaying) return _updateAndNotifyFor(deviceTrack);
+    _updateAndNotifyFor(spotifyTrack);
   }
 
   bool _shouldNotifyFor(NowPlayingTrack newTrack) {
-    if (newTrack.isSpotifyNotification && this.track is SpotifyTrack) return false;
-    return newTrack.isPlaying || !this.track.isPlaying;
+    if (newTrack.hasSpotifySource && this.track.isSpotify) return false;
+    if (newTrack == this.track) return false;
+    return true;
   }
 
   Future<bool> _bindToWidgetsBinding() async {
@@ -188,7 +189,10 @@ class NowPlaying with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       return true;
     } else {
-      return Future.delayed(const Duration(milliseconds: 250), _bindToWidgetsBinding);
+      return Future.delayed(
+        const Duration(milliseconds: 250),
+        _bindToWidgetsBinding,
+      );
     }
   }
 

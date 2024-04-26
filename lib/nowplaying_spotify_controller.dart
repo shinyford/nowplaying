@@ -7,13 +7,19 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'nowplaying.dart';
 import 'nowplaying_track.dart';
 
+/// A controller for interactions with the Spotify API
 class NowplayingSpotifyController {
   static const String _SPOTIFY_ACCESS_KEY = 'spotify.access.key';
   static const String _SPOTIFY_REFRESH_KEY = 'spotify.refresh.key';
   static const String _SPOTIFY_EXPIRATION_KEY = 'spotify.expiration.key';
 
   static const String _redirectUri = 'https://nowplaying.gomes.com/redirect';
-  static const List<String> _scopes = const ['user-read-email', 'user-library-read', 'user-read-recently-played', 'user-read-currently-playing'];
+  static const List<String> _scopes = const [
+    'user-read-email',
+    'user-library-read',
+    'user-read-recently-played',
+    'user-read-currently-playing'
+  ];
 
   late SharedPreferences _prefs;
 
@@ -26,21 +32,31 @@ class NowplayingSpotifyController {
 
   void setPrefs(SharedPreferences prefs) => this._prefs = prefs;
 
-  void setCredentials({required String clientId, required String clientSecret}) {
+  /// Sets the Spotify ClientID and ClientSecret for API interaction
+  ///
+  /// These can be created at https://developer.spotify.com/dashboard
+  void setCredentials(
+      {required String clientId, required String clientSecret}) {
     this._clientId = clientId;
     this._clientSecret = clientSecret;
   }
 
+  /// true if the Spotify API is available for use
   bool get isEnabled => _clientId.isNotEmpty && _clientSecret.isNotEmpty;
 
+  /// true if a valid connection to the API is currently available
   bool get isConnected {
     final int expiration = _prefs.getInt(_SPOTIFY_EXPIRATION_KEY) ?? 0;
     return expiration > DateTime.now().millisecondsSinceEpoch;
   }
 
+  /// true if not connected
   bool get isUnconnected => !isConnected;
 
-  Widget signInPage(context) {
+  /// Pushes a page onto the top of the Navigator stack containing a WebView
+  /// holding the Spotify sign-in flow. Users must have a valid Spotify
+  /// account and be signed in for Spotify nowplaying details to be available
+  Future<bool?> signIn(context) {
     final _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
@@ -48,9 +64,10 @@ class NowplayingSpotifyController {
         NavigationDelegate(
           onNavigationRequest: (navReq) {
             if (navReq.url.startsWith(_redirectUri)) {
-              this._spotifyApi = SpotifyApi.fromAuthCodeGrant(this._grant, navReq.url);
+              this._spotifyApi =
+                  SpotifyApi.fromAuthCodeGrant(this._grant, navReq.url);
               _saveCredentials();
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(true);
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
@@ -59,9 +76,14 @@ class NowplayingSpotifyController {
       )
       ..loadRequest(_authUri);
 
-    return WebViewWidget(controller: _controller);
+    return Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => WebViewWidget(controller: _controller),
+      ),
+    );
   }
 
+  /// Disconencts the Spotify API, disallowing further interrogation
   Future<void> disconnect() async {
     _spotifyApi = null;
     await Future.wait([
@@ -71,6 +93,10 @@ class NowplayingSpotifyController {
     ]);
   }
 
+  /// Gets an instance of the api.
+  ///
+  /// If the credentials have expired, a new set are seemlessly
+  /// requested via the refresh token.
   Future<SpotifyApi?> api() async {
     final expiration = _prefs.getInt(_SPOTIFY_EXPIRATION_KEY) ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -105,10 +131,12 @@ class NowplayingSpotifyController {
 
   void _saveCredentials() async {
     if (this._spotifyApi is SpotifyApi) {
-      final SpotifyApiCredentials creds = await this._spotifyApi!.getCredentials();
+      final SpotifyApiCredentials creds =
+          await this._spotifyApi!.getCredentials();
       _prefs.setString(_SPOTIFY_ACCESS_KEY, creds.accessToken!);
       _prefs.setString(_SPOTIFY_REFRESH_KEY, creds.refreshToken!);
-      _prefs.setInt(_SPOTIFY_EXPIRATION_KEY, creds.expiration!.millisecondsSinceEpoch);
+      _prefs.setInt(
+          _SPOTIFY_EXPIRATION_KEY, creds.expiration!.millisecondsSinceEpoch);
     }
   }
 
@@ -116,9 +144,12 @@ class NowplayingSpotifyController {
     this._grant = SpotifyApi.authorizationCodeGrant(
       SpotifyApiCredentials(this._clientId, this._clientSecret),
     );
-    return this._grant.getAuthorizationUrl(Uri.parse(_redirectUri), scopes: _scopes);
+    return this
+        ._grant
+        .getAuthorizationUrl(Uri.parse(_redirectUri), scopes: _scopes);
   }
 
+  /// Returns the current track status from Spotify
   Future<NowPlayingTrack> currentTrack([_]) async {
     final api = await this.api();
     if (api is SpotifyApi) {
@@ -138,18 +169,22 @@ class NowplayingSpotifyController {
   }
 }
 
+/// An extended NowPlayingTrack for Spotify API sourced tracks
 class SpotifyTrack extends NowPlayingTrack {
   static final SpotifyTrack notPlaying = SpotifyTrack();
-  static const _icon = const AssetImage('assets/spotify.png', package: 'nowplaying');
+  static const _icon =
+      const AssetImage('assets/spotify.png', package: 'nowplaying');
 
   final String? _imageUrl;
 
   @override
-  final isSpotifyTrack = true;
+  final isSpotify = true;
 
   @override
   ImageProvider? get image {
-    if (super.image == null && _imageUrl is String) super.image = NetworkImage(_imageUrl!);
+    if (super.image == null && _imageUrl is String) {
+      super.image = NetworkImage(_imageUrl!);
+    }
     return super.image;
   }
 
@@ -178,7 +213,6 @@ class SpotifyTrack extends NowPlayingTrack {
         );
 
   factory SpotifyTrack.from(PlaybackState playbackState) {
-    final bool isPlaying = playbackState.isPlaying ?? false;
     return SpotifyTrack(
       id: playbackState.item!.id,
       title: playbackState.item!.name,
@@ -187,7 +221,11 @@ class SpotifyTrack extends NowPlayingTrack {
       image: playbackState.item!.album?.images?.first.url,
       duration: playbackState.item!.duration ?? Duration.zero,
       position: Duration(milliseconds: playbackState.progressMs ?? 0),
-      state: isPlaying ? NowPlayingState.playing : NowPlayingState.paused,
+      state: switch (playbackState.isPlaying) {
+        true => NowPlayingState.playing,
+        false => NowPlayingState.paused,
+        null => NowPlayingState.stopped,
+      },
       source: "Spotify",
     );
   }
@@ -211,4 +249,7 @@ class SpotifyTrack extends NowPlayingTrack {
 
   @override
   bool get hasIcon => true;
+
+  @override
+  bool get isNotPlaying => this == notPlaying;
 }

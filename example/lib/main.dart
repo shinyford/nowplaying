@@ -44,9 +44,7 @@ class _NowPlayingTrackState extends State<NowPlayingTrackWidget> {
       }
 
       if (NowPlaying.spotify.isEnabled && NowPlaying.spotify.isUnconnected) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => NowPlaying.spotify.signInPage(context)),
-        );
+        NowPlaying.spotify.signIn(context);
       }
     });
   }
@@ -67,7 +65,7 @@ class _NowPlayingTrackState extends State<NowPlayingTrackWidget> {
                 if (track.title != null) Text(track.title!.trim()),
                 if (track.artist != null) Text(track.artist!.trim()),
                 if (track.album != null) Text(track.album!.trim()),
-                Text(track.duration.toString().split('.').first.padLeft(8, '0')),
+                Text(_timeStr(track.duration)),
                 TrackProgressIndicator(track),
                 Text(track.state.toString()),
                 Stack(
@@ -85,7 +83,8 @@ class _NowPlayingTrackState extends State<NowPlayingTrackWidget> {
                       ),
                     ),
                     Positioned(bottom: 0, right: 0, child: _iconFrom(track)),
-                    Positioned(bottom: 0, left: 8, child: Text(track.source!.trim())),
+                    Positioned(
+                        bottom: 0, left: 8, child: Text(track.source!.trim())),
                   ],
                 ),
               ]
@@ -110,18 +109,24 @@ class _NowPlayingTrackState extends State<NowPlayingTrackWidget> {
       return SizedBox(
         width: 50.0,
         height: 50.0,
-        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+        child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
       );
     }
 
-    return Text('NO\nARTWORK\nFOUND', textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, color: Colors.white));
+    return Text('NO\nARTWORK\nFOUND',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 24, color: Colors.white));
   }
 
   Widget _iconFrom(NowPlayingTrack track) {
     if (track.hasIcon)
       return Container(
         padding: const EdgeInsets.all(6),
-        decoration: const BoxDecoration(color: Colors.white, boxShadow: [const BoxShadow(blurRadius: 5, color: Colors.black)], shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [const BoxShadow(blurRadius: 5, color: Colors.black)],
+            shape: BoxShape.circle),
         child: Image(
           image: track.icon!,
           width: 25,
@@ -175,12 +180,21 @@ class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
   @override
   Widget build(BuildContext context) {
     final progress = widget.track.progress;
-    final countdown = widget.track.duration - progress + const Duration(seconds: 1);
+    final countdown =
+        widget.track.duration - progress + const Duration(seconds: 1);
     return Column(
       children: [
-        Text(progress.toString().split('.').first.padLeft(8, '0')),
-        Text(countdown.toString().split('.').first.padLeft(8, '0')),
+        Text(_timeStr(progress)),
+        Text(_timeStr(countdown)),
       ],
     );
   }
+}
+
+String _timeStr(Duration duration) {
+  final seconds = duration.inSeconds;
+  final hours = seconds ~/ 3600;
+  final mins = (seconds % 3600) ~/ 60;
+  final secs = seconds % 60;
+  return "$hours:${mins < 10 ? "0$mins" : mins}:${secs < 10 ? "0$secs" : secs}";
 }

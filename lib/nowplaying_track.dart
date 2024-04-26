@@ -17,7 +17,8 @@ class NowPlayingTrack {
   static final _essentialRegExp = RegExp(r'\(.*\)|\[.*\]');
 
   static final _images = _LruMap<String, ImageProvider?>(size: 3);
-  static final _resolutionStates = _LruMap<String, _NowPlayingImageResolutionState?>(size: 3);
+  static final _resolutionStates =
+      _LruMap<String, _NowPlayingImageResolutionState?>(size: 3);
   static final _icons = _LruMap<String?, ImageProvider>();
 
   final String id;
@@ -38,7 +39,8 @@ class NowPlayingTrack {
   /// If the track is not playing: how much had been played at the time the state
   /// was recorded
   Duration get progress {
-    if (state == NowPlayingState.playing) return position + DateTime.now().difference(createdAt);
+    if (state == NowPlayingState.playing)
+      return position + DateTime.now().difference(createdAt);
     return position;
   }
 
@@ -52,24 +54,35 @@ class NowPlayingTrack {
 
   /// An image representing the app playing the track
   ImageProvider? get icon {
-    if (isIOS) return const AssetImage('assets/applemusic.png', package: 'nowplaying');
-    if (source == 'com.acmeandroid.listen') return const AssetImage('assets/listenapp.png', package: 'nowplaying');
+    if (isIOS)
+      return const AssetImage('assets/applemusic.png', package: 'nowplaying');
+    if (source == 'com.acmeandroid.listen')
+      return const AssetImage('assets/listenapp.png', package: 'nowplaying');
     return _icons[this.source];
   }
 
-  bool get isSpotifyNotification => source == 'com.spotify.music';
+  final isSpotify = false;
+  bool get hasSpotifySource => source == 'com.spotify.music';
+
   bool get hasIcon => isIOS || _icons.containsKey(this.source);
   bool get hasImage => image != null;
 
-  final isSpotifyTrack = false;
-
   /// true if the image is being resolved, else false
-  bool get isResolvingImage => _resolutionState == _NowPlayingImageResolutionState.resolving;
+  bool get isResolvingImage =>
+      _resolutionState == _NowPlayingImageResolutionState.resolving;
 
   /// true if the image is empty and a resolution hasn't been attempted, else false
-  bool get imageNeedsResolving => _resolutionState == _NowPlayingImageResolutionState.unresolved;
+  bool get imageNeedsResolving =>
+      _resolutionState == _NowPlayingImageResolutionState.unresolved;
 
   String get _imageId => '$artist:$album';
+
+  @override
+  operator ==(other) =>
+      other is NowPlayingTrack &&
+      other.id == this.id &&
+      other.progress == this.progress &&
+      other.state == this.state;
 
   /// The image for the track, probably album art
   ///
@@ -78,8 +91,10 @@ class NowPlayingTrack {
   ImageProvider? get image => _images[_imageId];
   set image(ImageProvider? image) => _images[_imageId] = image;
 
-  _NowPlayingImageResolutionState? get _resolutionState => _resolutionStates[_imageId];
-  set _resolutionState(_NowPlayingImageResolutionState? state) => _resolutionStates[_imageId] = state;
+  _NowPlayingImageResolutionState? get _resolutionState =>
+      _resolutionStates[_imageId];
+  set _resolutionState(_NowPlayingImageResolutionState? state) =>
+      _resolutionStates[_imageId] = state;
 
   NowPlayingTrack({
     String? id,
@@ -149,6 +164,7 @@ class NowPlayingTrack {
         createdAt: this.createdAt,
       );
 
+  bool get isNotPlaying => this == notPlaying;
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
   bool get isStopped => this.state == NowPlayingState.stopped;
