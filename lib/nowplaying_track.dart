@@ -164,7 +164,8 @@ class NowPlayingTrack {
         createdAt: this.createdAt,
       );
 
-  bool get isNotPlaying => this == notPlaying;
+  bool get isNotReported => this == notPlaying;
+  bool get isReported => !isNotReported;
   bool get isPlaying => this.state == NowPlayingState.playing;
   bool get isPaused => this.state == NowPlayingState.paused;
   bool get isStopped => this.state == NowPlayingState.stopped;

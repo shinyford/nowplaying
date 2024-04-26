@@ -98,9 +98,11 @@ class NowPlaying with WidgetsBindingObserver {
   }
 
   void _updateAndNotifyFor(NowPlayingTrack track) {
-    if (_resolveImages && track.imageNeedsResolving) _resolveImageFor(track);
-    _controller.add(track);
-    this.track = track;
+    if (track != this.track) {
+      if (_resolveImages && track.imageNeedsResolving) _resolveImageFor(track);
+      _controller.add(track);
+      this.track = track;
+    }
   }
 
   void _resolveImageFor(NowPlayingTrack track) async {
@@ -173,13 +175,14 @@ class NowPlaying with WidgetsBindingObserver {
       _getCurrentDeviceTrack(),
     ]);
 
-    if (spotifyTrack.isNotPlaying) return _updateAndNotifyFor(deviceTrack);
-    _updateAndNotifyFor(spotifyTrack);
+    if (deviceTrack.isPlaying) return _updateAndNotifyFor(deviceTrack);
+    if (spotifyTrack.isReported) return _updateAndNotifyFor(spotifyTrack);
+    if (deviceTrack.isReported) return _updateAndNotifyFor(deviceTrack);
+    _updateAndNotifyFor(NowPlayingTrack.notPlaying);
   }
 
   bool _shouldNotifyFor(NowPlayingTrack newTrack) {
     if (newTrack.hasSpotifySource && this.track.isSpotify) return false;
-    if (newTrack == this.track) return false;
     return true;
   }
 

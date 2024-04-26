@@ -65,7 +65,7 @@ class _NowPlayingTrackState extends State<NowPlayingTrackWidget> {
                 if (track.title != null) Text(track.title!.trim()),
                 if (track.artist != null) Text(track.artist!.trim()),
                 if (track.album != null) Text(track.album!.trim()),
-                Text(_timeStr(track.duration)),
+                Text(track.duration.truncToSecond.toShortString()),
                 TrackProgressIndicator(track),
                 Text(track.state.toString()),
                 Stack(
@@ -179,22 +179,23 @@ class _TrackProgressIndicatorState extends State<TrackProgressIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    final progress = widget.track.progress;
+    final progress = widget.track.progress.truncToSecond;
     final countdown =
         widget.track.duration - progress + const Duration(seconds: 1);
     return Column(
       children: [
-        Text(_timeStr(progress)),
-        Text(_timeStr(countdown)),
+        Text(progress.toShortString()),
+        Text(countdown.toShortString()),
       ],
     );
   }
 }
 
-String _timeStr(Duration duration) {
-  final seconds = duration.inSeconds;
-  final hours = seconds ~/ 3600;
-  final mins = (seconds % 3600) ~/ 60;
-  final secs = seconds % 60;
-  return "$hours:${mins < 10 ? "0$mins" : mins}:${secs < 10 ? "0$secs" : secs}";
+extension DurationExtension on Duration {
+  Duration get truncToSecond {
+    final ms = this.inMilliseconds;
+    return Duration(milliseconds: ms - ms % 1000);
+  }
+
+  String toShortString() => toString().split(".").first;
 }

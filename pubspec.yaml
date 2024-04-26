@@ -1,7 +1,7 @@
 name: nowplaying
 description: A plugin to reveal metadata for the currently playing audio track
 repository: https://github.com/shinyford/nowplaying
-version: 3.0.1
+version: 3.0.2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

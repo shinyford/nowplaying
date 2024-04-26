@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.2
+
+- Fix bug with choosing between spotify and device tracks
+
 ## 3.0.1
 
 - Simplify track object

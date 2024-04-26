@@ -251,5 +251,5 @@ class SpotifyTrack extends NowPlayingTrack {
   bool get hasIcon => true;
 
   @override
-  bool get isNotPlaying => this == notPlaying;
+  bool get isNotReported => this == notPlaying;
 }
