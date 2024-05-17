@@ -22,6 +22,8 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
+    namespace 'com.gomes.NowPlaying'
+    
     compileSdkVersion 29
 
     defaultConfig {
