@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.3
+
+- Add missing namespace to build.gradle
+- Replace the discontinued package_info with package_info_plus
+- Thanks to https://github.com/Binozo for the patch
+
 ## 3.0.2
 
 - Fix bug with choosing between spotify and device tracks

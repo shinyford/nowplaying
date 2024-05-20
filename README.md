@@ -18,7 +18,7 @@ Add `nowplaying` as a dependency in your `pubspec.yaml` file:
 
 ```
 dependencies:
-    nowplaying: ^3.0.2
+    nowplaying: ^3.0.3
 ```
 
 ### iOS
@@ -102,7 +102,7 @@ You'll also need to update the gradle version to a proper version, which support
 
 ### Initialisation
 
-Initialise the `nowplaying` service by starting it's instance:
+Initialise the `nowplaying` service by starting its instance:
 
 ```dart
 await NowPlaying.instance.start();
