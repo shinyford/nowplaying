@@ -39,8 +39,7 @@ class NowPlayingTrack {
   /// If the track is not playing: how much had been played at the time the state
   /// was recorded
   Duration get progress {
-    if (state == NowPlayingState.playing)
-      return position + DateTime.now().difference(createdAt);
+    if (isPlaying) return position + DateTime.now().difference(createdAt);
     return position;
   }
 
@@ -184,7 +183,7 @@ class NowPlayingTrack {
   Future<void> resolveImage() async {
     if (imageNeedsResolving && !hasImage) {
       _resolutionState = _NowPlayingImageResolutionState.resolving;
-      this.image = await NowPlaying.instance.resolver?.resolve(this);
+      this.image = await NowPlaying.instance.resolver.resolve(this);
       _resolutionState = _NowPlayingImageResolutionState.resolved;
     }
   }

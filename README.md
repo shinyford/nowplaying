@@ -294,7 +294,7 @@ await NowPlaying.instance.start(..., resolver: MyImageResolver(), ...);
 
 class MyImageResolver implements NowPlayingImageResolver {
     @override
-    Future<ImageProvider> resolve(NowPlayingTrack track) async {
+    Future<ImageProvider?> resolve(NowPlayingTrack track) async {
         ...
     }
 }
